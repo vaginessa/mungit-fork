@@ -1,12 +1,13 @@
 ungit
 ======
-[![NPM version](https://badge.fury.io/js/ungit.svg)](http://badge.fury.io/js/ungit)
-[![Build Status](https://travis-ci.org/FredrikNoren/ungit.svg)](https://travis-ci.org/FredrikNoren/ungit)
-[![Join the chat at https://gitter.im/FredrikNoren/ungit](https://badges.gitter.im/FredrikNoren/ungit.svg)](https://gitter.im/FredrikNoren/ungit?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+This is an MIT licensed ungit fork from the moment when original authors and upstream maintainers decided to change license. See FredrikNoren/ungit#974 for details and discussion.
+
+Feel free to use this fork, efforts will be made to keep it relevant. Feature and bugfix pull requests are welcomed!
+
+Intro
+-----
 
 The easiest way to use git. On any platform. Anywhere.
-
-[![xkcd](xkcd.png)](https://xkcd.com/1597/)
 
 Git is known for being a versatile distributed source control system that is a staple of many individuals, communities, and even for [the City of Chattanooga to crowd source bicycle parking locations](https://github.com/cityofchattanooga/Bicycle-Parking).  However, it is not known for userfriendlyness or easy learning curve.
 
@@ -17,12 +18,6 @@ Ungit brings user friendliness to git without sacrificing the versatility of git
  * Web-based, meaning you can run it on your cloud/pure shell machine and use the ui from your browser (just browse to http://your-cloud-machine.com:8448).
  * Works well with GitHub.
  * [Gerrit](https://code.google.com/p/gerrit/) integration through plugin: https://github.com/FredrikNoren/ungit-gerrit
-
-[Follow @ungitui on twitter](https://twitter.com/ungitui)
-
-Quick intro to ungit: [http://youtu.be/hkBVAi3oKvo](http://youtu.be/hkBVAi3oKvo)
-
-[![Screenshot](screenshot.png)](http://youtu.be/hkBVAi3oKvo)
 
 Installing
 ----------
@@ -86,17 +81,10 @@ Text Editor Integrations
 
 ![VSCode-UngitTab screenshot](https://raw.githubusercontent.com/RomanValihura/vscode-ungit-tab/master/samples/ungit-vs.gif)
 
-
 Developing
 ----------
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
-
-Maintainers
------------
-* [FredrikNoren](https://github.com/FredrikNoren)
-* [codingtwinky](https://github.com/codingtwinky)
-* [campersau](https://github.com/campersau)
 
 Known issues
 ------------
@@ -110,17 +98,3 @@ Known issues
 Changelog
 ---------
 See [CHANGELOG.md](CHANGELOG.md).
-
-License (MIT)
--------------
-
-Copyright (C) 2013-2017 Fredrik Norén
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-[![Dependency Status](https://david-dm.org/FredrikNoren/ungit.svg)](https://david-dm.org/FredrikNoren/ungit)
-[![devDependency Status](https://david-dm.org/FredrikNoren/ungit/dev-status.svg)](https://david-dm.org/FredrikNoren/ungit#info=devDependencies)
