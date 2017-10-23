@@ -8,6 +8,17 @@
     Base repository: <a data-bind="text: parentModulePath, attr: { href: parentModuleLink}"></a>
   </div>
   <!-- /ko -->
+  
+  <div class="repository-actions-wrapper">
+    <div class="repository-actions">
+      <!-- ko if: refreshButton -->
+        <!-- ko component: refreshButton --><!-- /ko -->
+      <!-- /ko -->
+      <!-- ko component: remotes --><!-- /ko -->
+      <!-- ko component: submodules --><!-- /ko -->
+      <!-- ko component: branches --><!-- /ko -->
+    </div>
+  </div>
 
   <!-- ko component: stash --><!-- /ko -->
 
@@ -18,15 +29,6 @@
   <!-- /ko -->
 
   <!-- ko if: showLog -->
-
-  <div class="repository-actions">
-    <!-- ko if: refreshButton -->
-      <!-- ko component: refreshButton --><!-- /ko -->
-    <!-- /ko -->
-    <!-- ko component: remotes --><!-- /ko -->
-    <!-- ko component: submodules --><!-- /ko -->
-    <!-- ko component: branches --><!-- /ko -->
-  </div>
 
   <!-- ko component: graph --><!-- /ko -->
 
