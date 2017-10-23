@@ -289,10 +289,14 @@ StagingViewModel.prototype.onEnter = function(d, e){
     return true;
 };
 StagingViewModel.prototype.onAltEnter = function(d, e){
-    if (e.keyCode === 13 && e.altKey && !this.commitValidationError()) {
-      this.commit();
-    }
-    return true;
+  var element = document.getElementById('form-commitMessageBody');
+  element.style.height = 'auto';
+  element.style.height = element.scrollHeight + 'px'; 
+
+  if (e.keyCode === 13 && e.altKey && !this.commitValidationError()) {
+    this.commit();
+  }
+  return true;
 };
 
 var FileViewModel = function(staging, name) {
