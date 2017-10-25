@@ -3,6 +3,14 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 Use the following format for additions: ` - VERSION: [feature/patch (if applicable)] Short description of change. Links to relevant issues/PRs.`
 
+- 1.2.0:
+  - Mungit fork. Reason, upstream licensing change [#974](https://github.com/FredrikNoren/ungit/issues/974)
+  - Improvements to narrow space alignment and moving the toolbar up [#2](https://github.com/exsilium/mungit/issues/1)
+  - Grey coloring scheme introduced to differentiate from original and to align better with Cloud9v2 coloring [#1](https://github.com/exsilium/mungit/issues/1)
+  - First release to npm and synch up with tagging releases in Github
+  
+# Pre-fork
+  
 - 1.1.31:
   - Bump dependencies
   - Remove forever-monitor [#961](https://github.com/FredrikNoren/ungit/issues/961)

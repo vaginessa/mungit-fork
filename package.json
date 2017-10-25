@@ -1,8 +1,11 @@
 {
-  "name": "ungit",
+  "name": "mungit",
   "author": "Fredrik Norén <fredrik.jw.noren@gmail.com>",
+  "contributors": [
+    "Sten Feldman <exile@chamber.ee> (http://sten.feldman.eesti.ee/)"
+  ],
   "description": "Git made easy",
-  "version": "1.1.30",
+  "version": "1.2.0",
   "ungitPluginApiVersion": "0.2.0",
   "scripts": {
     "start": "node ./bin/ungit",
@@ -12,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/FredrikNoren/ungit.git"
+    "url": "https://github.com/exsilium/mungit.git"
   },
   "bin": {
     "ungit": "./bin/ungit",
