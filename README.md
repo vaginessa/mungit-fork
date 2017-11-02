@@ -6,4 +6,8 @@ Feel free to use this fork, efforts will be made to keep it relevant. Feature an
 
 Intro
 -----
-At present moment mungit is only available via Github, npm packages will be provided in the future.
+Clone this repo or install via npm.
+
+```
+npm install -g mungit
+```
