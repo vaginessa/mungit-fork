@@ -40,7 +40,7 @@ const defaultConfig = {
   // True to enable authentication. Users are defined in the users configuration property.
   authentication: false,
 
-  // Map of username/passwords which are granted access.
+  // Map of username/passwords which are granted access. --users.<USERNAME> <PASSWORD> or via .ungitrc as "users": { "username": "password" }
   users: undefined,
 
   // Set to false to show rebase and merge on drag and drop on all nodes.
@@ -165,7 +165,7 @@ let argv = yargs
 .describe('bugtracking', 'This will automatically send anonymous bug reports')
 .describe('sendUsageStatistics', 'Google analytics for usage statistics')
 .describe('authentication', 'True to enable authentication. Users are defined in the users configuration property')
-.describe('users', 'Map of username/passwords which are granted access')
+.describe('users', 'Map of username/passwords which are granted access. Use as --users.<USERNAME> <PASSWORD>')
 .describe('showRebaseAndMergeOnlyOnRefs', 'Set to false to show rebase and merge on drag and drop on all nodes')
 .describe('maxConcurrentGitOperations', 'Maximum number of concurrent git operations')
 .describe('forcedLaunchPath', 'Define path to be used on open. Can be set to null to force the home screen')
