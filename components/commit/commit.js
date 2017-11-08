@@ -44,6 +44,13 @@ function CommitViewModel(gitNode) {
     if (self.selected() && self.element()) return { "margin-left": marginLeft + 'px', width: (window.innerWidth - 220) + 'px' };
     else return { left: '0px', width: self.element() ? ((self.element().clientWidth - 20) + 'px') : 'inherit' };
   });
+  
+  this.transferProtocol = 'http';  
+  if(ungit.config.urlBase.length >= 5) {
+    if(ungit.config.urlBase[4].toUpperCase() === 'S') {
+      this.transferProtocol = 'https';
+    }
+  }
 }
 CommitViewModel.prototype.updateNode = function(parentElement) {
   ko.renderTemplate('commit', this, {}, parentElement);
