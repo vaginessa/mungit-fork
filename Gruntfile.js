@@ -297,6 +297,7 @@ module.exports = (grunt) => {
     b.require('bluebird', { expose: 'bluebird' });
     b.require('just-detect-adblock', { expose: 'just-detect-adblock' });
     b.require('./node_modules/snapsvg/src/mina.js', { expose: 'mina' });
+    b.require('octicons', { expose: 'octicons'});
     const outFile = fs.createWriteStream('./public/js/ungit.js');
     outFile.on('close', () => done());
     b.bundle().pipe(outFile);
