@@ -3,6 +3,7 @@ var ko = require('knockout');
 var inherits = require('util').inherits;
 var components = require('ungit-components');
 var Promise = require('bluebird');
+var octicon = require('octicons');
 var RefViewModel = require('./git-ref.js');
 var HoverActions = require('./hover-actions');
 var RebaseViewModel = HoverActions.RebaseViewModel;
@@ -70,7 +71,7 @@ GraphActions.Move = function(graph, node) {
 inherits(GraphActions.Move, GraphActions.ActionBase);
 GraphActions.Move.prototype.text = 'Move';
 GraphActions.Move.prototype.style = 'move';
-GraphActions.Move.prototype.icon = 'glyphicon glyphicon-move';
+GraphActions.Move.prototype.icon = octicon.plus.toSVG({ "height": 20 });
 GraphActions.Move.prototype.perform = function() {
   return this.graph.currentActionContext().moveTo(this.node.sha1);
 }
@@ -94,7 +95,7 @@ GraphActions.Reset = function(graph, node) {
 inherits(GraphActions.Reset, GraphActions.ActionBase);
 GraphActions.Reset.prototype.text = 'Reset';
 GraphActions.Reset.prototype.style = 'reset';
-GraphActions.Reset.prototype.icon = 'glyphicon glyphicon-trash';
+GraphActions.Reset.prototype.icon = octicon.trashcan.toSVG({ "height": 20 });
 GraphActions.Reset.prototype.createHoverGraphic = function() {
   var context = this.graph.currentActionContext();
   if (!context) return null;
@@ -130,7 +131,7 @@ GraphActions.Rebase = function(graph, node) {
 inherits(GraphActions.Rebase, GraphActions.ActionBase);
 GraphActions.Rebase.prototype.text = 'Rebase';
 GraphActions.Rebase.prototype.style = 'rebase';
-GraphActions.Rebase.prototype.icon = 'octicon octicon-repo-forked flip';
+GraphActions.Rebase.prototype.icon = octicon['repo-forked'].toSVG({ "height": 20 });
 GraphActions.Rebase.prototype.createHoverGraphic = function() {
   var onto = this.graph.currentActionContext();
   if (!onto) return;
@@ -158,7 +159,7 @@ GraphActions.Merge = function(graph, node) {
 inherits(GraphActions.Merge, GraphActions.ActionBase);
 GraphActions.Merge.prototype.text = 'Merge';
 GraphActions.Merge.prototype.style = 'merge';
-GraphActions.Merge.prototype.icon = 'octicon octicon-git-merge';
+GraphActions.Merge.prototype.icon = octicon['git-merge'].toSVG({ "height": 20 });
 GraphActions.Merge.prototype.createHoverGraphic = function() {
   var node = this.graph.currentActionContext();
   if (!node) return null;
@@ -184,7 +185,7 @@ GraphActions.Push = function(graph, node) {
 inherits(GraphActions.Push, GraphActions.ActionBase);
 GraphActions.Push.prototype.text = 'Push';
 GraphActions.Push.prototype.style = 'push';
-GraphActions.Push.prototype.icon = 'octicon octicon-cloud-upload';
+GraphActions.Push.prototype.icon = octicon['repo-push'].toSVG({ "height": 20 });
 GraphActions.Push.prototype.createHoverGraphic = function() {
   var context = this.graph.currentActionContext();
   if (!context) return null;
@@ -225,7 +226,7 @@ GraphActions.Checkout = function(graph, node) {
 inherits(GraphActions.Checkout, GraphActions.ActionBase);
 GraphActions.Checkout.prototype.text = 'Checkout';
 GraphActions.Checkout.prototype.style = 'checkout';
-GraphActions.Checkout.prototype.icon = 'octicon octicon-desktop-download';
+GraphActions.Checkout.prototype.icon = octicon['desktop-download'].toSVG({ "height": 20 });
 GraphActions.Checkout.prototype.perform = function() {
   var self = this;
   var context = this.graph.currentActionContext();
@@ -273,7 +274,7 @@ GraphActions.Delete = function(graph, node) {
 inherits(GraphActions.Delete, GraphActions.ActionBase);
 GraphActions.Delete.prototype.text = 'Delete';
 GraphActions.Delete.prototype.style = 'delete';
-GraphActions.Delete.prototype.icon = 'glyphicon glyphicon-remove';
+GraphActions.Delete.prototype.icon = octicon.x.toSVG({ "height": 20 });
 GraphActions.Delete.prototype.perform = function() {
   var context = this.graph.currentActionContext();
   var name = context.isRemoteBranch ? "remote " + context.localRefName : context.localRefName;
@@ -297,7 +298,7 @@ GraphActions.CherryPick = function(graph, node) {
 inherits(GraphActions.CherryPick, GraphActions.ActionBase);
 GraphActions.CherryPick.prototype.text = 'Cherry pick';
 GraphActions.CherryPick.prototype.style = 'cherry-pick';
-GraphActions.CherryPick.prototype.icon = 'octicon octicon-circuit-board';
+GraphActions.CherryPick.prototype.icon = octicon['circuit-board'].toSVG({ "height": 20 });
 GraphActions.CherryPick.prototype.perform = function() {
   var self = this;
   return this.server.postPromise('/cherrypick', { path: this.graph.repoPath(), name: this.node.sha1 })
@@ -317,7 +318,7 @@ GraphActions.Uncommit = function(graph, node) {
 inherits(GraphActions.Uncommit, GraphActions.ActionBase);
 GraphActions.Uncommit.prototype.text = 'Uncommit';
 GraphActions.Uncommit.prototype.style = 'uncommit';
-GraphActions.Uncommit.prototype.icon = 'octicon octicon-zap';
+GraphActions.Uncommit.prototype.icon = octicon.zap.toSVG({ "height": 20 });
 GraphActions.Uncommit.prototype.perform = function() {
   var self = this;
   return this.server.postPromise('/reset', { path: this.graph.repoPath(), to: 'HEAD^', mode: 'mixed' })
@@ -343,7 +344,7 @@ GraphActions.Revert = function(graph, node) {
 inherits(GraphActions.Revert, GraphActions.ActionBase);
 GraphActions.Revert.prototype.text = 'Revert';
 GraphActions.Revert.prototype.style = 'revert';
-GraphActions.Revert.prototype.icon = 'octicon octicon-history';
+GraphActions.Revert.prototype.icon = octicon.history.toSVG({ "height": 20 });
 GraphActions.Revert.prototype.perform = function() {
   var self = this;
   return this.server.postPromise('/revert', { path: this.graph.repoPath(), commit: this.node.sha1 });
@@ -363,7 +364,7 @@ GraphActions.Squash = function(graph, node) {
 inherits(GraphActions.Squash, GraphActions.ActionBase);
 GraphActions.Squash.prototype.text = 'Squash';
 GraphActions.Squash.prototype.style = 'squash';
-GraphActions.Squash.prototype.icon = 'octicon octicon-fold';
+GraphActions.Squash.prototype.icon = octicon.fold.toSVG({ "height": 20 });
 GraphActions.Squash.prototype.createHoverGraphic = function() {
   let onto = this.graph.currentActionContext();
   if (!onto) return;

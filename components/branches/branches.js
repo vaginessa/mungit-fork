@@ -4,6 +4,7 @@ var _ = require('lodash');
 var async = require('async');
 var components = require('ungit-components');
 var programEvents = require('ungit-program-events');
+var octicon = require('octicons');
 
 components.register('branches', function(args) {
   return new BranchesViewModel(args.server, args.repoPath);
@@ -16,6 +17,7 @@ function BranchesViewModel(server, repoPath) {
   this.branches = ko.observableArray();
   this.fetchingProgressBar = components.create('progressBar', { predictionMemoryKey: 'fetching-' + this.repoPath(), temporary: true });
   this.current = ko.observable();
+  this.icon = octicon['git-branch'].toSVG({ "height": 20 });
   this.fetchLabel = ko.computed(function() {
     if (self.current()) {
       return self.current();

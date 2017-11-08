@@ -4,6 +4,7 @@ var Selectable = require('./selectable');
 var programEvents = require('ungit-program-events');
 var components = require('ungit-components');
 var Promise = require('bluebird');
+var octicon = require('octicons');
 
 var RefViewModel = function(fullRefName, graph) {
   var self = this;
@@ -60,6 +61,19 @@ var RefViewModel = function(fullRefName, graph) {
   this.node.subscribe(function(newNode) {
     if (newNode) newNode.pushRef(self);
   });
+  
+  this.branchIcon = ko.computed(function() {
+    if(self.isLocalBranch && self.graph.checkedOutBranch() == self.refName) {
+      return octicon['git-branch'].toSVG({ "height": 28 });
+    }
+    else {
+      return octicon['git-branch'].toSVG({ "height": 20 });
+    }
+  });
+  
+  this.remoteIcon = octicon.broadcast.toSVG({ "height": 20 });
+  this.globeIcon = octicon.globe.toSVG({ "height": 20 });
+  this.tagIcon = octicon.tag.toSVG({ "height": 20 });
 };
 module.exports = RefViewModel;
 
