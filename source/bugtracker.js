@@ -4,7 +4,7 @@ const winston = require('winston');
 const sysinfo = require('./sysinfo');
 const config = require('./config');
 const raven = require('raven');
-const client = new raven.Client('https://58f16d6f010d4c77900bb1de9c02185f:84b7432f56674fbc8522bc84cc7b30f4@app.getsentry.com/12434');
+const client = raven.config('https://1ccfef6f2d3e41a2b74372e22546731c:17bd0b6ba90a489c981365323b518419@sentry.io/244250').install();
 
 class BugTracker {
   constructor(subsystem) {
@@ -19,22 +19,25 @@ class BugTracker {
     sysinfo.getUserHash()
       .then((userHash) => {
         this.userHash = userHash;
-        winston.info('BugTracker set user hash');
+        winston.info('BugTracker set user hash: ' + userHash);
       });
   }
   notify(exception, clientName) {
     if (!config.bugtracking) return;
 
     let options = {
-      user: { id: this.userHash },
+      level: 'error',
       tags: {
         version: this.appVersion,
         subsystem: this.subsystem,
         deployment: config.desktopMode ? 'desktop' : 'web'
+      },
+      extra: {
+        user: { id: this.userHash }
       }
     }
-
-    client.captureException(exception, options);
+    winston.warn('Sending exception to Sentry.io');
+    client.captureException(JSON.stringify(exception, null, 4), options);
   }
 }
 module.exports = BugTracker;

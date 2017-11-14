@@ -59,11 +59,6 @@ module.exports = (grunt) => {
         }
       },
     },
-    release: {
-      options: {
-        commitMessage: 'Release <%= version %>',
-      }
-    },
     // Run mocha tests
     mochaTest: {
       unit: {
@@ -459,7 +454,6 @@ module.exports = (grunt) => {
   grunt.loadNpmTasks('grunt-contrib-less');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-lineending');
-  grunt.loadNpmTasks('grunt-release');
   grunt.loadNpmTasks('grunt-mocha-test');
   grunt.loadNpmTasks('grunt-plato');
   grunt.loadNpmTasks('grunt-contrib-imagemin');
@@ -477,12 +471,6 @@ module.exports = (grunt) => {
   grunt.registerTask('unittest', ['mochaTest:unit']);
   grunt.registerTask('clicktest', ['mochaTest:click']);
   grunt.registerTask('test', ['unittest', 'clicktest']);
-
-  // Builds, and then creates a release (bump patch version, create a commit & tag, publish to npm)
-  grunt.registerTask('publish', ['default', 'test', 'release:patch']);
-
-  // Same as publish but for minor version
-  grunt.registerTask('publishminor', ['default', 'test', 'release:minor']);
 
   // Create electron package
   grunt.registerTask('package', ['clean:electron', 'clean:babel', 'babel:electron', 'copy:electron', 'electron']);

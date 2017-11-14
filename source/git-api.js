@@ -2,6 +2,8 @@ const path = require('path');
 const temp = require('temp');
 const gitParser = require('./git-parser');
 const winston = require('winston');
+const BugTracker = require('./bugtracker');
+const bugtracker = new BugTracker('server');
 const usageStatistics = require('./usage-statistics');
 const os = require('os');
 const mkdirp = require('mkdirp');
@@ -162,6 +164,7 @@ exports.registerApi = (env) => {
         res.json(result || {});
       }).catch((err) => {
         winston.warn('Responding with ERROR: ', JSON.stringify(err));
+        bugtracker.notify(err, 'mungit-git-api');
         res.status(400).json(err);
       });
   }

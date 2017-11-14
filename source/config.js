@@ -34,7 +34,7 @@ const defaultConfig = {
   // This will automatically send anonymous bug reports.
   bugtracking: false,
 
-  // Google analytics for usage statistics.
+  // Send usage statistics to Keen.io.
   sendUsageStatistics: false,
 
   // True to enable authentication. Users are defined in the users configuration property.
@@ -162,8 +162,8 @@ let argv = yargs
 .describe('logRESTRequests', 'Write REST requests to the log')
 .describe('logGitCommands', 'Write git commands issued to the log')
 .describe('logGitOutput', 'Write the result of git commands issued to the log')
-.describe('bugtracking', 'This will automatically send anonymous bug reports')
-.describe('sendUsageStatistics', 'Google analytics for usage statistics')
+.describe('bugtracking', 'This will automatically send anonymous bug reports (Sentry.io)')
+.describe('sendUsageStatistics', 'Report anonymous usage statistics (Keen.io)')
 .describe('authentication', 'True to enable authentication. Users are defined in the users configuration property')
 .describe('users', 'Map of username/passwords which are granted access. Use as --users.<USERNAME> <PASSWORD>')
 .describe('showRebaseAndMergeOnlyOnRefs', 'Set to false to show rebase and merge on drag and drop on all nodes')
