@@ -34,7 +34,7 @@ const defaultConfig = {
   // This will automatically send anonymous bug reports.
   bugtracking: false,
 
-  // Send usage statistics to Keen.io.
+  // Send usage statistics to Keen.io and Google Analytics.
   sendUsageStatistics: false,
 
   // True to enable authentication. Users are defined in the users configuration property.
