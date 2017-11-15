@@ -5,10 +5,11 @@ Use the following format for additions: ` - VERSION: [feature/patch (if applicab
 
 - 1.2.1:
   - Octicons used as SVGs instead of WebFonts [#3](https://github.com/exsilium/mungit/issues/3)
-  - Keen.io usage statistics update
+  - Keen.io and Google Analytics usage statistics update
   - Sentry.io automatic bug reporting updated (git unhandled exceptions are now included)
   - Fix for Node Security Advisory [#550](https://nodesecurity.io/advisories/550) in module ws
-  - Grunt-release devDependency deprecation
+  - Grunt-release; grunt-image-embed devDependency deprecation
+  - Dependency updates
 - 1.2.0:
   - Mungit fork. Reason, upstream licensing change [#974](https://github.com/FredrikNoren/ungit/issues/974)
   - Improvements to narrow space alignment and moving the toolbar up [#2](https://github.com/exsilium/mungit/issues/1)
