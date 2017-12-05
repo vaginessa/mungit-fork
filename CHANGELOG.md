@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 Use the following format for additions: ` - VERSION: [feature/patch (if applicable)] Short description of change. Links to relevant issues/PRs.`
 
+- 1.2.2:
+  - Check version updates against mungit package, redirect users to mungit GitHub page for issues [#6](https://github.com/exsilium/mungit/issues/6)
 - 1.2.1:
   - Octicons used as SVGs instead of WebFonts [#3](https://github.com/exsilium/mungit/issues/3)
   - Keen.io and Google Analytics usage statistics update

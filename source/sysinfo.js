@@ -20,7 +20,7 @@ exports.getUngitLatestVersion = () => {
     });
   }).then((client) => {
     return new Bluebird((resolve, reject) => {
-      client.get('https://registry.npmjs.org/ungit', { timeout: 1000 }, (err, data, raw, res) => {
+      client.get('https://registry.npmjs.org/mungit', { timeout: 1000 }, (err, data, raw, res) => {
         if (err) {
           reject(err);
         } else {
