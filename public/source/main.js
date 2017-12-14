@@ -156,13 +156,8 @@ exports.start = function() {
       app.onProgramEvent(event);
     }
   });
-  if (ungit.config.authentication) {
-    var authenticationScreen = components.create('login', { server: server });
-    appContainer.content(authenticationScreen);
-    authenticationScreen.loggedIn.add(function() {
-      server.initSocket();
-    });
-  } else {
+  
+  if (!ungit.config.authentication) {
     server.initSocket();
   }
 
@@ -184,12 +179,30 @@ exports.start = function() {
 
   // routing
   navigation.crossroads.addRoute('/', function() {
+    
+    if (ungit.config.authentication) {
+      var authenticationScreen = components.create('login', { server: server });
+      appContainer.content(authenticationScreen);
+      authenticationScreen.loggedIn.add(function() {
+        server.initSocket();
+      });
+    }
+    
     app.content(components.create('home', { app: app }));
     windowTitle.path = 'ungit';
     windowTitle.update();
   });
 
   navigation.crossroads.addRoute('/repository{?query}', function(query) {
+    
+    if (ungit.config.authentication) {
+      var authenticationScreen = components.create('login', { server: server, token: query.token });
+      appContainer.content(authenticationScreen);
+      authenticationScreen.loggedIn.add(function() {
+        server.initSocket();
+      });
+    }
+    
     programEvents.dispatch({ event: 'navigated-to-path', path: query.path });
     app.content(components.create('path', { server: server, path: query.path }));
     windowTitle.path = query.path;

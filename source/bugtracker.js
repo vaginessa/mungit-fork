@@ -4,12 +4,13 @@ const winston = require('winston');
 const sysinfo = require('./sysinfo');
 const config = require('./config');
 const raven = require('raven');
-const client = raven.config('https://1ccfef6f2d3e41a2b74372e22546731c:17bd0b6ba90a489c981365323b518419@sentry.io/244250').install();
+var client;
 
 class BugTracker {
   constructor(subsystem) {
     if (!config.bugtracking) return;
 
+    client = raven.config('https://1ccfef6f2d3e41a2b74372e22546731c:17bd0b6ba90a489c981365323b518419@sentry.io/244250').install();
     this.subsystem = subsystem;
     this.appVersion = 'unknown';
     this.userHash = 'unkown';
