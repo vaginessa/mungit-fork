@@ -239,7 +239,7 @@ module.exports = (grunt) => {
     babel: {
       prod: {
         options: {
-          presets: ['es2015', 'stage-0']
+          presets: ['@babel/preset-es2015', '@babel/preset-stage-0']
         },
         files: [{
             expand: true,
@@ -251,7 +251,7 @@ module.exports = (grunt) => {
       },
       electron: {
         options: {
-          presets: ['es2015', 'stage-0']
+          presets: ['@babel/preset-es2015', '@babel/preset-stage-0']
         },
         files: [{
             expand: true,

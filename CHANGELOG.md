@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 Use the following format for additions: ` - VERSION: [feature/patch (if applicable)] Short description of change. Links to relevant issues/PRs.`
 
+- 1.2.3:
+  - Allow authentication via repository url link using token parameter [#11](https://github.com/exsilium/mungit/issues/11)
+  - Issues and changelog links updated to new repo
+  - Dependencies updated
 - 1.2.2:
   - Check version updates against mungit package, redirect users to mungit GitHub page for issues [#6](https://github.com/exsilium/mungit/issues/6)
 - 1.2.1:
