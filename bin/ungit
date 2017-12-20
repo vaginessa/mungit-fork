@@ -60,7 +60,10 @@ const launch = () => {
   }
 
   const startupListener = (data) => {
-    if (data.toString().indexOf('## Ungit started ##') >= 0) {
+    if (data.toString().indexOf('!!') >= 0) {
+      console.log(data.toString().trim());
+    }
+    else if (data.toString().indexOf('## Mungit started ##') >= 0) {
       child.removeListener('stdout', startupListener);
       child.stdout.on('data', (data) => console.log(data.toString().trim()))
       const launchTime = (Date.now() - startLaunchTime);

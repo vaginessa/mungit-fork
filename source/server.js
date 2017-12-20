@@ -19,6 +19,7 @@ const UngitPlugin = require('./ungit-plugin');
 const serveStatic = require('serve-static');
 const bodyParser = require('body-parser');
 const Bluebird = require('bluebird');
+const jwt = require('jsonwebtoken');
 
 process.on('uncaughtException', (err) => {
   winston.error(err.stack ? err.stack.toString() : err.toString());
@@ -28,7 +29,7 @@ process.on('uncaughtException', (err) => {
   ], () => process.exit());
 });
 
-console.log('Setting log level to ' + config.logLevel);
+console.log('!! Setting log level to ' + config.logLevel);
 winston.remove(winston.transports.Console);
 winston.add(winston.transports.Console, {
   level: config.logLevel,
@@ -42,7 +43,16 @@ const users = config.users;
 config.users = null; // So that we don't send the users to the client
 
 if (config.authentication) {
-
+  sysinfo.getUserHash().then((hash) => { 
+    // Tokenize users
+    for (var i = 0, l = Object.keys(users).length; i < l; i++) {
+      var userEntry =  { };
+      userEntry[Object.keys(users)[i]] = users[Object.keys(users)[i]];
+      var token = jwt.sign(userEntry, hash, { noTimestamp: true });
+      console.log('Tokenizing user: ' + Object.keys(users)[i] + ' - ' + token);
+  }
+  });
+  
   passport.serializeUser((username, done) => {
     done(null, username);
   });
@@ -147,6 +157,36 @@ if (config.authentication) {
         return;
       });
     })(req, res, next);
+  });
+  
+  app.post('/api/logintoken', (req, res, next) => {
+    if(!req.body.token) {
+      res.status(401).json({ errorCode: 'authentication-failed', error: "No Token" });
+      return;
+    }
+    else {
+      sysinfo.getUserHash().then((hash) => {
+        try {
+          var userData = jwt.verify(req.body.token, hash);
+          req.body = { username: Object.keys(userData)[0], password: userData[Object.keys(userData)[0]] };
+      
+          passport.authenticate('local', (err, user, info) => {
+            if (err) { return next(err) }
+            if (!user) {
+              res.status(401).json({ errorCode: 'authentication-failed', error: info.message });
+              return;
+            }
+            req.logIn(user, (err) => {
+              if (err) { return next(err); }
+              res.json({ ok: true });
+              return;
+            });
+          })(req, res, next);  
+        } catch (err) {
+          return next(new Error('Invalid token'));
+        }
+      });
+    }
   });
 
   app.get('/api/loggedin', (req, res) => {
@@ -358,6 +398,6 @@ exports.started = new signals.Signal();
 
 server.listen(config.port, () => {
   winston.info('Listening on port ' + config.port);
-  console.log('## Ungit started ##'); // Consumed by bin/ungit to figure out when the app is started
+  console.log('## Mungit started ##'); // Consumed by bin/ungit to figure out when the app is started
   exports.started.dispatch();
 });

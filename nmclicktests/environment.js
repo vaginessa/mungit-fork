@@ -290,7 +290,7 @@ class Environment {
         console.log('server-already-running');
       }
 
-      if (stdoutStr.indexOf('## Ungit started ##') >= 0) {
+      if (stdoutStr.indexOf('## Mungit started ##') >= 0) {
         if (this.hasStarted) {
           console.log('Ungit started twice, probably crashed.');
         } else {
