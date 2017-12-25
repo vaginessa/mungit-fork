@@ -6,9 +6,9 @@
 
 mungit
 ======
-This is an MIT licensed ungit fork from the moment when original authors and upstream maintainers decided to change license. See [FredrikNoren/ungit#974](https://github.com/FredrikNoren/ungit/issues/974) for details and discussion.
+Mungit is an MIT licensed [ungit](https://github.com/FredrikNoren/ungit) fork that was triggered by upstream [license change](https://github.com/FredrikNoren/ungit/issues/974). As of 22nd of December 2017, however, the original author decided to [revert ungit back](https://github.com/FredrikNoren/ungit/issues/997) to MIT license 🙌 🎉
 
-Feel free to use this fork, efforts will be made to keep it relevant. Feature and bugfix pull requests are welcome!
+Due to the recent changes of upstream reverting back to MIT license, it's unclear if Mungit will remain as an alternative flavor of Ungit, or if the differences will be merged back to upstream.
 
 Intro
 -----
