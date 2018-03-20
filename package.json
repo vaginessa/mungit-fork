@@ -5,7 +5,7 @@
     "Sten Feldman <exile@chamber.ee> (http://sten.feldman.eesti.ee/)"
   ],
   "description": "Git made easy",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "ungitPluginApiVersion": "0.2.0",
   "scripts": {
     "start": "node ./bin/ungit",
@@ -65,15 +65,15 @@
   },
   "devDependencies": {
     "ansi-color": "~0.2.1",
-    "@babel/core": "7.0.0-beta.35",
-    "@babel/preset-es2015": "7.0.0-beta.35",
-    "@babel/preset-stage-0": "7.0.0-beta.35",
+    "@babel/core": "7.0.0-beta.42",
+    "@babel/preset-es2015": "7.0.0-beta.42",
+    "@babel/preset-stage-0": "7.0.0-beta.42",
     "browserify": "~14.5.0",
     "electron-packager": "~10.1.0",
     "expect.js": "~0.3.1",
     "extract-zip": "~1.6.6",
     "grunt": "~1.0.1",
-    "grunt-babel": "https://github.com/exsilium/grunt-babel/tarball/178118e409448d2423524baa8c866ec2fe65c61d",
+    "grunt-babel": "8.0.0-beta.0",
     "grunt-contrib-clean": "~1.1.0",
     "grunt-contrib-copy": "~1.0.0",
     "grunt-contrib-imagemin": "~2.0.1",
