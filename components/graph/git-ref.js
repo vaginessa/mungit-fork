@@ -41,11 +41,11 @@ var RefViewModel = function(fullRefName, graph) {
   if (this.isRemoteTag) {
     this.localRefName = this.name.slice('remote-tag: '.length);
   }
+  const splitedName = this.localRefName.split('/')
   if (this.isRemote) {
     // get rid of the origin/ part of origin/branchname
-    var s = this.localRefName.split('/');
-    this.remote = s[0];
-    this.refName = s.slice(1).join('/');
+    this.remote = splitedName[0];
+    this.refName = splitedName.slice(1).join('/');
   }
   this.show = true;
   this.server = this.graph.server;
@@ -61,19 +61,16 @@ var RefViewModel = function(fullRefName, graph) {
   this.node.subscribe(function(newNode) {
     if (newNode) newNode.pushRef(self);
   });
-  
-  this.branchIcon = ko.computed(function() {
-    if(self.isLocalBranch && self.graph.checkedOutBranch() == self.refName) {
-      return octicon['git-branch'].toSVG({ "height": 28 });
-    }
-    else {
-      return octicon['git-branch'].toSVG({ "height": 20 });
-    }
-  });
-  
+
+  this.branchIcon = octicon['git-branch'].toSVG({ "height": 28 });
   this.remoteIcon = octicon.broadcast.toSVG({ "height": 20 });
   this.globeIcon = octicon.globe.toSVG({ "height": 20 });
   this.tagIcon = octicon.tag.toSVG({ "height": 20 });
+
+  // This optimization is for autocomplete display
+  this.value = splitedName[splitedName.length - 1];
+  this.label = this.localRefName;
+  this.dom = `${this.localRefName}${this.isTag ? octicon.tag.toSVG({ "height": 20 }) : octicon['git-branch'].toSVG({ "height": 28 })}`;
 };
 module.exports = RefViewModel;
 
