@@ -15,7 +15,6 @@ function BranchesViewModel(server, repoPath) {
   this.repoPath = repoPath;
   this.server = server;
   this.branches = ko.observableArray();
-  this.fetchingProgressBar = components.create('progressBar', { predictionMemoryKey: 'fetching-' + this.repoPath(), temporary: true });
   this.current = ko.observable();
   this.icon = octicon['git-branch'].toSVG({ "height": 20 });
   this.fetchLabel = ko.computed(function() {
@@ -36,14 +35,11 @@ BranchesViewModel.prototype.onProgramEvent = function(event) {
 }
 BranchesViewModel.prototype.checkoutBranch = function(branch) {
   var self = this;
-  this.fetchingProgressBar.start();
   this.server.postPromise('/checkout', { path: this.repoPath(), name: branch.name })
-    .then(function() { self.current(branch.name); })
-    .finally(function() { self.fetchingProgressBar.stop(); });
+    .then(function() { self.current(branch.name); });
 }
 BranchesViewModel.prototype.updateBranches = function() {
   var self = this;
-  this.fetchingProgressBar.start();
 
   this.server.getPromise('/branches', { path: this.repoPath() })
     .then(function(branches) {
@@ -61,8 +57,7 @@ BranchesViewModel.prototype.updateBranches = function() {
           self.current(branch.name);
         }
       });
-    }).catch(function(err) { self.current("~error"); })
-    .finally(function() { self.fetchingProgressBar.stop() })
+    }).catch(function(err) { self.current("~error"); });
 }
 
 BranchesViewModel.prototype.branchRemove = function(branch) {

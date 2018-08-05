@@ -44,7 +44,7 @@ LoginViewModel.prototype.login = function() {
       if (err.res.body.error) {
         self.loginError(err.res.body.error);
       } else {
-        throw err;
+        self.server.unhandledRejection(err);
       }
     });
   }
@@ -56,7 +56,7 @@ LoginViewModel.prototype.login = function() {
       if (err.res.body.error) {
         self.loginError(err.res.body.error);
       } else {
-        throw err;
+        self.server.unhandledRejection(err);
       }
     });
   }
