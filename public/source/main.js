@@ -47,52 +47,52 @@ var navigation = require('ungit-navigation');
 }());
 
 ko.bindingHandlers.autocomplete = {
-  init: function(element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
-    var handleKeyEvent = function(event) {
-      var value = $(element).val();
-      var lastChar = value.slice(-1);
-      if (lastChar == '/' || lastChar == '\\') {  // When "/" or "\"
-        server.getPromise('/fs/listDirectories', {term: value}).then(function(directoryList) {
-          $(element).autocomplete({
-            source: directoryList,
-            messages: {
-              noResults: '',
-              results: function() {}
-            }
-          });
-          $(element).autocomplete("search", value);
-        }).catch(function(err) {
+  init: (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) => {
+    const setAutoCompleteOptions = (sources) => {
+      $(element).autocomplete({
+        source: sources,
+        minLength: 0,
+        messages: {
+          noResults: '',
+          results: () => {}
+        }
+      });
+    }
+
+    const handleKeyEvent = (event) => {
+      const value = $(element).val();
+      const lastChar = value.slice(-1);
+      if (lastChar == ungit.config.fileSeparator) {
+        // When file seprator is entered, list what is in given path, and rest auto complete options
+        server.getPromise('/fs/listDirectories', {term: value}).then((directoryList) => {
+          const currentDir = directoryList.shift();
+          $(element).val(currentDir.endsWith(ungit.config.fileSeparator) ? currentDir : currentDir + ungit.config.fileSeparator);
+          setAutoCompleteOptions(directoryList)
+          $(element).autocomplete('search', value);
+        }).catch((err) => {
           if (!err.errorSummary.startsWith('ENOENT: no such file or directory') && err.errorCode !== 'read-dir-failed') {
             throw err;
           }
         });
-      } else if (event.keyCode == 39) { // '/'
-        $(element).val(value + ungit.config.fileSeparator);
-      } else if (event.keyCode == 13) { // enter
+      } else if (event.keyCode === 13) {
+        // enter key is struck, navigate to the path
         event.preventDefault();
-        navigation.browseTo('repository?path=' + encodeURIComponent(value));
-      } else if (localStorage.repositories && value.indexOf("/") === -1 && value.indexOf("\\") === -1) {
-        var folderNames = localStorage.repositories.replace(/("|\[|\])/g, "")
-          .split(",")
-          .map(function(value) {
-            return {
-              value: value,
-              label: value.substring(value.lastIndexOf("/") + 1)
-            };
-          });
-
-        $(element).autocomplete({
-          source: folderNames,
-          messages: {
-            noResults: '',
-            results: function() {}
-          }
+        navigation.browseTo(`repository?path=${encodeURIComponent(value)}`);
+      } else if (value === '' && localStorage.repositories) {
+        // if path is emptied out, show save path options
+        const folderNames = JSON.parse(localStorage.repositories).map((value) => {
+          return {
+            value: value,
+            label: value.substring(value.lastIndexOf(ungit.config.fileSeparator) + 1)
+          };
         });
+        setAutoCompleteOptions(folderNames);
+        $(element).autocomplete('search', '');
       }
 
       return true;
     };
-    ko.utils.registerEventHandler(element, "keyup", _.debounce(handleKeyEvent, 100));
+    ko.utils.registerEventHandler(element, 'keyup', _.debounce(handleKeyEvent, 100));
   }
 };
 
@@ -116,7 +116,7 @@ function WindowTitle() {
   this.crash = false;
 }
 WindowTitle.prototype.update = function() {
-  var title = this.path.replace('\\', '/').split('/').filter(function(x) { return x; }).reverse().join(' < ');
+  var title = this.path.replace(/\\/g, '/').split('/').filter(function(x) { return x; }).reverse().join(' < ');
   if (this.crash) title = ':( ungit crash ' + title;
   document.title = title;
 }
