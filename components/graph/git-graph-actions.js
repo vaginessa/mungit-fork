@@ -269,11 +269,16 @@ GraphActions.Delete.prototype.text = 'Delete';
 GraphActions.Delete.prototype.style = 'delete';
 GraphActions.Delete.prototype.icon = octicon.x.toSVG({ "height": 20 });
 GraphActions.Delete.prototype.perform = function() {
-  var context = this.graph.currentActionContext();
-  var name = context.isRemoteBranch ? "remote " + context.localRefName : context.localRefName;
-  return components.create('yesnodialog', { title: 'Are you sure?', details: 'Deleting ' + name + ' branch or tag cannot be undone with ungit.'})
+  const context = this.graph.currentActionContext();
+  let details = `"${context.refName}"`;
+  if (context.isRemoteBranch) {
+    details = `<code style='font-size: 100%'>REMOTE</code> ${details}`;
+  }
+  details = `Deleting ${details} branch or tag cannot be undone with ungit.`;
+
+  return components.create('yesnodialog', { title: 'Are you sure?', details: details })
     .show()
-    .closeThen(function(diag) {
+    .closeThen((diag) => {
       if (diag.result()) return context.remove();
     }).closePromise;
 }
