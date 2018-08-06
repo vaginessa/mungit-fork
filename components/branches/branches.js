@@ -5,6 +5,7 @@ var async = require('async');
 var components = require('ungit-components');
 var programEvents = require('ungit-program-events');
 var octicon = require('octicons');
+const isFetchRemoteBranches = 'isFetchRemoteBranches';
 
 components.register('branches', function(args) {
   return new BranchesViewModel(args.server, args.repoPath);
@@ -17,6 +18,12 @@ function BranchesViewModel(server, repoPath) {
   this.branches = ko.observableArray();
   this.current = ko.observable();
   this.icon = octicon['git-branch'].toSVG({ "height": 20 });
+  this.isFetchRemoteBranches = ko.observable(localStorage.getItem(isFetchRemoteBranches) == 'true');
+  this.isFetchRemoteBranches.subscribe((value) => {
+    localStorage.setItem(isFetchRemoteBranches, value);
+    this.updateBranches();
+    return value;
+  });
   this.fetchLabel = ko.computed(function() {
     if (self.current()) {
       return self.current();
@@ -41,26 +48,30 @@ BranchesViewModel.prototype.checkoutBranch = function(branch) {
 BranchesViewModel.prototype.updateBranches = function() {
   var self = this;
 
-  this.server.getPromise('/branches', { path: this.repoPath() })
+  this.server.getPromise('/branches', { path: this.repoPath(), isFetchRemoteBranches: this.isFetchRemoteBranches() })
     .then(function(branches) {
       const sorted = branches.filter((b) => b.name.indexOf('->') === -1)
         .map((b) => {
-          if (b.current) self.current(b.name);
+          b.isRemote = b.name.indexOf('remotes/') === 0;
           b.displayName = b.name.replace('remotes/', '<span class="octicon octicon-broadcast"></span> ');
+          if (b.current) {
+            self.current(b.name);
+            b.displayName = `<span class="octicon octicon-chevron-right"></span> ${b.name}`
+          }
           return b;
         }).sort((a, b) => {
-          const isARemote = a.name.indexOf('remotes/')
-          const isBRemote = b.name.indexOf('remotes/')
-          if (isARemote === isBRemote) {
-            if (a.name < b.name)
+          if (a.current || b.current) {
+            return a.current ? -1 : 1;
+          } else if (a.isRemote === b.isRemote) {
+            if (a.name < b.name) {
                return -1;
-            if (a.name > b.name)
+            } if (a.name > b.name) {
               return 1;
+            }
             return 0;
           } else {
-            return isARemote ? -1 : 1;
+            return a.isRemote ? 1 : -1;
           }
-          return 0;
         });
       self.branches(sorted);
     }).catch(function(err) { self.current("~error"); });

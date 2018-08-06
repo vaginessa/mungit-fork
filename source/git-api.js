@@ -341,7 +341,9 @@ exports.registerApi = (env) => {
   });
 
   app.get(`${exports.pathPrefix}/branches`, ensureAuthenticated, ensurePathExists, (req, res) => {
-    jsonResultOrFailProm(res, gitPromise(['branch', '-a'], req.query.path).then(gitParser.parseGitBranches));
+    const isFetchRemoteBranches = req.query.isFetchRemoteBranches == 'true'
+    jsonResultOrFailProm(res, gitPromise(['branch', isFetchRemoteBranches ? '-a' : ''], req.query.path)
+      .then(gitParser.parseGitBranches));
   });
 
   app.post(`${exports.pathPrefix}/branches`, ensureAuthenticated, ensurePathExists, (req, res) => {
@@ -404,11 +406,30 @@ exports.registerApi = (env) => {
       .finally(emitGitDirectoryChanged.bind(null, req.query.path));
   });
 
+  const createBranchIfPossible = (branchName, path, retry) => {
+    retry = retry || 3;
+    return gitPromise(['branch', branchName], path).catch((e) => {
+        if (retry > -1) {
+          return createBranchIfPossible(`ungit-${crypto.randomBytes(4).toString('hex')}`, path, retry - 1);
+        } else {
+          throw e;
+        }
+      }).then(() => branchName);
+  }
+
   app.post(`${exports.pathPrefix}/checkout`, ensureAuthenticated, ensurePathExists, (req, res) => {
     const arg = !!req.body.sha1 ? ['checkout', '-b', req.body.name.trim(), req.body.sha1] : ['checkout', req.body.name.trim()];
+    const isRemote = !!req.body.name && req.body.name.indexOf('remote/') === 0;
 
-    jsonResultOrFailProm(res, autoStashExecuteAndPop(arg, req.body.path))
-      .then(emitGitDirectoryChanged.bind(null, req.body.path))
+    jsonResultOrFailProm(res, autoStashExecuteAndPop(arg, req.body.path).then(() => {
+        if (isRemote) {
+          // preferred branch name will not work as expected when remote or branch nae has '/'
+          const preferredBranchName = `${req.body.name.splice('/').slice(2).join('/')}`
+          return createBranchIfPossible(preferredBranchName, req.body.path)
+            // sucessfully create the branch, checkout and be marry
+            .then((createdName) => return gitPromise(['checkout', createdName], req.body.path));
+        }
+      })).then(emitGitDirectoryChanged.bind(null, req.body.path))
       .then(emitWorkingTreeChanged.bind(null, req.body.path));
   });
 
