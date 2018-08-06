@@ -79,6 +79,9 @@ var StagingViewModel = function(server, repoPath, graph) {
   this.canStashAll = ko.computed(function() {
     return !self.amend();
   });
+  this.canPush = ko.computed(function() {
+    return !!self.graph.currentRemote();
+  });
   this.showNux = ko.computed(function() {
     return self.files().length == 0 && !self.amend() && !self.inRebase() && !self.emptyCommit();
   });
@@ -275,7 +278,7 @@ StagingViewModel.prototype.commitnpush = function() {
           .show()
           .closeThen(function(diag) {
             if (!diag.result()) return false;
-            return self.server.postPromise('/push', { path: this.repoPath(), remote: this.graph.currentRemote(), force: true });
+            return self.server.postPromise('/push', { path: self.repoPath(), remote: self.graph.currentRemote(), force: true });
           }).closePromise;
       } else {
         self.server.unhandledRejection(err);      
