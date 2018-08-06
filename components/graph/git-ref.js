@@ -73,10 +73,15 @@ var RefViewModel = function(fullRefName, graph) {
   this.dom = `${this.localRefName}${this.isTag ? octicon.tag.toSVG({ "height": 20 }) : octicon['git-branch'].toSVG({ "height": 28 })}`;
   this.displayName = ko.computed(function() {
     var prefix = ''
-    if (self.isRemoteBranch) {
+    if (self.isRemote) {
       prefix = '<span class="octicon octicon-broadcast"></span> ';
+    }
+    if (self.isBranch) {
+      prefix += '<span class="octicon octicon-git-branch"></span> ';
     } else if (self.current()) {
-      prefix = '<span class="octicon octicon-chevron-right"></span> '
+      prefix += '<span class="octicon octicon-chevron-right"></span> ';
+    } else if (self.isTag) {
+      prefix += '<span class="octicon octicon-tag"></span> ';
     }
     return prefix + self.localRefName;
   });
