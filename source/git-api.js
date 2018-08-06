@@ -17,6 +17,7 @@ const crypto = require('crypto');
 
 const isMac = /^darwin/.test(process.platform);
 const isWindows = /^win/.test(process.platform);
+const tenMinTimeoutMs = 10 * 60 * 1000;
 
 exports.pathPrefix = '';
 
@@ -213,8 +214,7 @@ exports.registerApi = (env) => {
 
   app.post(`${exports.pathPrefix}/fetch`, ensureAuthenticated, ensurePathExists, ensureValidSocketId, (req, res) => {
     // Allow a little longer timeout on fetch (10min)
-    const timeoutMs = 10 * 60 * 1000;
-    if (res.setTimeout) res.setTimeout(timeoutMs);
+    if (res.setTimeout) res.setTimeout(tenMinTimeoutMs);
 
     const task = gitPromise({
       commands: credentialsOption(req.body.socketId, req.body.remote).concat([
@@ -223,7 +223,7 @@ exports.registerApi = (env) => {
           req.body.ref ? req.body.ref : '',
           config.autoPruneOnFetch ? '--prune' : '']),
       repoPath: req.body.path,
-      timeout: timeoutMs
+      timeout: tenMinTimeoutMs
     });
 
     jsonResultOrFailProm(res, task)
@@ -232,8 +232,7 @@ exports.registerApi = (env) => {
 
   app.post(`${exports.pathPrefix}/push`, ensureAuthenticated, ensurePathExists, ensureValidSocketId, (req, res) => {
     // Allow a little longer timeout on push (10min)
-    const timeoutMs = 10 * 60 * 1000;
-    if (res.setTimeout) res.setTimeout(timeoutMs);
+    if (res.setTimeout) res.setTimeout(tenMinTimeoutMs);
     const task = gitPromise({
       commands: credentialsOption(req.body.socketId, req.body.remote).concat([
           'push',
@@ -241,7 +240,7 @@ exports.registerApi = (env) => {
           (req.body.refSpec ? req.body.refSpec : 'HEAD') + (req.body.remoteBranch ? `:${req.body.remoteBranch}` : ''),
           (req.body.force ? '-f' : '')]),
       repoPath: req.body.path,
-      timeout: timeoutMs
+      timeout: tenMinTimeoutMs
     });
 
     jsonResultOrFailProm(res, task)
@@ -341,6 +340,47 @@ exports.registerApi = (env) => {
     jsonResultOrFailProm(res, task);
   });
 
+  app.get(`${exports.pathPrefix}/refs`, ensureAuthenticated, ensurePathExists, (req, res) => {
+    if (res.setTimeout) res.setTimeout(tenMinTimeoutMs);
+
+    const task = gitPromise(['remote'], req.query.path)
+      .then((remoteText) => {
+        const remotes = remoteText.trim().split('\n');
+
+        // making calls serially as credential helpers may get confused to which cred to get.
+        return Bluebird.each(remotes, (remote) => {
+          if (!remote || remote === '') return;
+          return gitPromise({
+            commands: credentialsOption(req.query.socketId, remote).concat(['fetch', remote]),
+            repoPath: req.query.path,
+            timeout: tenMinTimeoutMs
+          }).catch((e) => winston.warn("err during remote fetch for /refs", e)) // ignore fetch err as it is most likely credential
+        });
+      }).then(() => gitPromise(['show-ref', '-d'], req.query.path))
+      // On new fresh repos, empty string is returned but has status code of error, simply ignoring them
+      .catch((e) => { if (e.message !== '') throw e; })
+      .then((refs) => {
+        const results = [];
+        if (refs) {
+          refs.trim().split('\n').forEach((n) => {
+            const splitted = n.split(' ');
+            const sha1 = splitted[0]
+            const name = splitted[1]
+            if (name.indexOf('refs/tags') > -1 && name.indexOf('^{}') > -1) {
+              results[results.length - 1].sha1 = sha1;
+            } else {
+              results.push({
+                name: name,
+                sha1: sha1
+              });
+            }
+          });
+        }
+        return results;
+      });
+    jsonResultOrFailProm(res, task);
+  });
+
   app.get(`${exports.pathPrefix}/branches`, ensureAuthenticated, ensurePathExists, (req, res) => {
     const isLocalBranchOnly = req.query.isLocalBranchOnly == 'false';
     jsonResultOrFailProm(res, gitPromise(['branch', isLocalBranchOnly ? '-a' : ''], req.query.path)
@@ -401,9 +441,12 @@ exports.registerApi = (env) => {
   });
 
   app.delete(`${exports.pathPrefix}/remote/tags`, ensureAuthenticated, ensurePathExists, (req, res) => {
-    const commands = credentialsOption(req.query.socketId, req.query.remote).concat(['push', `${req.query.remote} :"refs/tags${req.query.name.trim()}"`]);
+    const commands = credentialsOption(req.query.socketId, req.query.remote).concat(['push', req.query.remote, `:refs/tags/${req.query.name.trim()}`]);
+    const task = gitPromise(['tag', '-d', req.query.name.trim()], req.query.path)
+      .catch(() => {})  // might have already deleted, so ignoring error
+      .then(() => gitPromise(commands, req.query.path))
 
-    jsonResultOrFailProm(res, gitPromise(commands, req.query.path))
+    jsonResultOrFailProm(res, task)
       .finally(emitGitDirectoryChanged.bind(null, req.query.path));
   });
 
@@ -490,7 +533,7 @@ exports.registerApi = (env) => {
   });
 
   app.post(`${exports.pathPrefix}/resolveconflicts`, ensureAuthenticated, ensurePathExists, (req, res) => {
-    console.log('resolve conflicts');
+    winston.info('resolve conflicts');
     jsonResultOrFailProm(res, gitPromise.resolveConflicts(req.body.path, req.body.files))
       .then(emitWorkingTreeChanged.bind(null, req.body.path));
   });
