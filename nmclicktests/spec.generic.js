@@ -37,6 +37,12 @@ describe('[GENERIC]', () => {
       .wait('.commit');
   });
 
+  it('Should be possible to cancel amend a file', () => {
+    return environment.nm.ug.createTestFile(`${testRepoPaths[0]}/testfile2.txt`)
+      .ug.amendCommit()
+      .wait('.btn-stg-cancel');
+  });
+
   it('Should be able to add a new file to .gitignore', () => {
     return environment.nm.ug.createTestFile(`${testRepoPaths[0]}/addMeToIgnore.txt`)
       .wait('.files .file .btn-default')
@@ -162,6 +168,30 @@ describe('[GENERIC]', () => {
   it('Should be possible to move a branch', () => {
     return environment.nm.ug.createBranch('movebranch')
       .ug.moveRef('movebranch', 'Init');
+  });
+
+  it('Should be possible to cancel creation of an empty commit', () => {
+    return environment.nm.ug.emptyCommit()
+      .ug.click('.btn-stg-cancel')
+      .wait('.empty-commit-link');
+  });
+
+  it('Should be possible to create an empty commit', () => {
+    return environment.nm.ug.emptyCommit()
+      .wait('.commit');
+  });
+
+  it('Should be possible to ammend an empty commit', () => {
+    return environment.nm.ug.emptyCommit()
+      .wait('.commit')
+      .ug.amendCommit()
+      .wait('.commit');
+  });
+
+  it('Should be possible to cancel amend of an empty commit', () => {
+    return environment.nm.ug.amendCommit()
+      .ug.click('.btn-stg-cancel')
+      .wait('.empty-commit-link');
   });
 
   it('Should be possible to click refresh button', () => {

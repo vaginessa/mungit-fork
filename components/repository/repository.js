@@ -19,8 +19,8 @@ var RepositoryViewModel = function(server, path) {
   this.remotes = components.create('remotes', { server: server, repoPath: this.repoPath });
   this.submodules = components.create('submodules', { server: server, repoPath: this.repoPath });
   this.stash = this.isBareDir ? {} : components.create('stash', { server: server, repoPath: this.repoPath });
-  this.staging = this.isBareDir ? {} : components.create('staging', { server: server, repoPath: this.repoPath });
-  this.branches = components.create('branches', { server: server, repoPath: this.repoPath });
+  this.staging = this.isBareDir ? {} : components.create('staging', { server: server, repoPath: this.repoPath, graph: this.graph });
+  this.branches = components.create('branches', { server: server, graph: this.graph, repoPath: this.repoPath });
   this.repoPath.subscribe(function(value) { self.sever.watchRepository(value); });
   this.server.watchRepository(this.repoPath());
   this.showLog = self.isBareDir ? ko.observable(true) : self.staging.isStageValid;

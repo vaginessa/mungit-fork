@@ -67,7 +67,8 @@ AppViewModel.prototype.shown = function() {
     // since ungit may have crashed without the server crashing since we enabled bugtracking,
     // and we don't want to show the nagscreen twice in that case.
     this.server.getPromise('/userconfig')
-      .then(function(userConfig) { self.bugtrackingEnabled(userConfig.bugtracking); });
+      .then(function(userConfig) { self.bugtrackingEnabled(userConfig.bugtracking); })
+      .catch((e) => this.server.unhandledRejection(e));
   }
 
   this.server.getPromise('/latestversion')
@@ -76,13 +77,13 @@ AppViewModel.prototype.shown = function() {
       self.currentVersion(version.currentVersion);
       self.latestVersion(version.latestVersion);
       self.showNewVersionAvailable(!ungit.config.ungitVersionCheckOverride && version.outdated);
-    });
+    }).catch((e) => this.server.unhandledRejection(e));
   this.server.getPromise('/gitversion')
     .then(function(gitversion) {
       if (gitversion && !gitversion.satisfied) {
         self.gitVersionError(gitversion.error);
       }
-    });
+    }).catch((e) => this.server.unhandledRejection(e));
 }
 AppViewModel.prototype.updateAnimationFrame = function(deltaT) {
   if (this.content() && this.content().updateAnimationFrame) this.content().updateAnimationFrame(deltaT);
@@ -101,13 +102,13 @@ AppViewModel.prototype._handleRequestRememberRepo = function(event) {
   if (this.repoList.indexOf(repoPath) != -1) return;
   this.repoList.push(repoPath);
 }
-AppViewModel.prototype._handleCredentialsRequested = function() {
+AppViewModel.prototype._handleCredentialsRequested = function(event) {
   var self = this;
   // Only show one credentials dialog if we're asked to show another one while the first one is open
   // This happens for instance when we fetch nodes and remote tags at the same time
   if (!this._isShowingCredentialsDialog) {
     this._isShowingCredentialsDialog = true;
-    components.create('credentialsdialog').show().closeThen(function(diag) {
+    components.create('credentialsdialog', {remote: event.remote}).show().closeThen(function(diag) {
       self._isShowingCredentialsDialog = false;
       programEvents.dispatch({ event: 'request-credentials-response', username: diag.username(), password: diag.password() });
     });
@@ -128,7 +129,7 @@ AppViewModel.prototype.gitSetUserConfig = function(bugTracking, sendUsageStatist
       if (sendUsageStatistics != undefined) userConfig.sendUsageStatistics = sendUsageStatistics;
       return self.server.postPromise('/userconfig', userConfig)
         .then(function() { self.bugtrackingEnabled(bugTracking); });
-    }).catch(function(err) { })
+    });
 }
 AppViewModel.prototype.enableBugtrackingAndStatistics = function() {
   this.gitSetUserConfig(true, true);

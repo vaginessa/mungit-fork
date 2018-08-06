@@ -35,7 +35,9 @@ GraphActions.ActionBase.prototype.doPerform = function() {
   if (this.isRunning()) return;
   this.graph.hoverGraphAction(null);
   this.isRunning(true);
-  this.perform().finally(() => { this.isRunning(false); });
+  this.perform()
+    .catch((e) => this.server.unhandledRejection(e))
+    .finally(() => { this.isRunning(false); });
 }
 GraphActions.ActionBase.prototype.dragEnter = function() {
   if (!this.visible()) return;
@@ -221,36 +223,7 @@ GraphActions.Checkout.prototype.text = 'Checkout';
 GraphActions.Checkout.prototype.style = 'checkout';
 GraphActions.Checkout.prototype.icon = octicon['desktop-download'].toSVG({ "height": 20 });
 GraphActions.Checkout.prototype.perform = function() {
-  var self = this;
-  var context = this.graph.currentActionContext();
-  var refName = context instanceof RefViewModel ? context.refName : context.sha1;
-
-  var movePromise = Promise.resolve();
-  var isRemote = context instanceof RefViewModel && context.isRemoteBranch;
-  var isLocalCurrent = context.getLocalRef() && context.getLocalRef().current();
-  if (isRemote && !isLocalCurrent) {
-    movePromise = this.server.postPromise('/branches', {
-      path: this.graph.repoPath(),
-      name: context.refName,
-      sha1: context.name,
-      force: true
-    });
-  }
-  return this.server.postPromise('/checkout', { path: this.graph.repoPath(), name: refName })
-    .then(function() {
-      if (isRemote && isLocalCurrent) {
-        return self.server.postPromise('/reset', { path: self.graph.repoPath(), to: context.name, mode: 'hard' })
-          .then(function() {
-            self.graph.HEADref().node(context instanceof RefViewModel ? context.node() : context);
-          }).catch(function(err) {
-            if (err.errorCode == 'merge-failed') self.server.unhandledRejection(err);
-          });
-      } else {
-        self.graph.HEADref().node(context instanceof RefViewModel ? context.node() : context);
-      }
-    }).catch(function(err) {
-      if (err.errorCode != 'merge-failed') self.server.unhandledRejection(err);
-    });
+  return this.graph.currentActionContext().checkout();
 }
 
 GraphActions.Delete = function(graph, node) {

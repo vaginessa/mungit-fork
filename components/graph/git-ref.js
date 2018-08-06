@@ -71,6 +71,15 @@ var RefViewModel = function(fullRefName, graph) {
   this.value = splitedName[splitedName.length - 1];
   this.label = this.localRefName;
   this.dom = `${this.localRefName}${this.isTag ? octicon.tag.toSVG({ "height": 20 }) : octicon['git-branch'].toSVG({ "height": 28 })}`;
+  this.displayName = ko.computed(function() {
+    var prefix = ''
+    if (self.isRemoteBranch) {
+      prefix = '<span class="octicon octicon-broadcast"></span> ';
+    } else if (self.current()) {
+      prefix = '<span class="octicon octicon-chevron-right"></span> '
+    }
+    return prefix + self.localRefName;
+  });
 };
 module.exports = RefViewModel;
 
@@ -124,6 +133,8 @@ RefViewModel.prototype.moveTo = function(target, rewindWarnOverride) {
               pushReq.force = true;
               return self.server.postPromise('/push', pushReq);
             }).closePromise;
+        } else {
+          self.server.unhandledRejection(err);      
         }
       });
   }
@@ -136,7 +147,7 @@ RefViewModel.prototype.moveTo = function(target, rewindWarnOverride) {
         self.graph.HEADref().node(targetNode);
       }
       self.node(targetNode);
-    });
+    }).catch((e) => this.server.unhandledRejection(e));
 }
 
 RefViewModel.prototype.remove = function() {
@@ -148,7 +159,8 @@ RefViewModel.prototype.remove = function() {
     .then(function() {
       self.node().removeRef(self);
       self.graph.refsByRefName[self.name] = undefined;
-    }).finally(function() {
+    }).catch((e) => this.server.unhandledRejection(e))
+    .finally(function() {
       if (url == '/remote/tags') {
         programEvents.dispatch({ event: 'request-fetch-tags' });
       } else {
@@ -186,9 +198,33 @@ RefViewModel.prototype.canBePushed = function(remote) {
 
 RefViewModel.prototype.createRemoteRef = function() {
   var self = this;
-  return this.server.postPromise('/push', { path: this.graph.repoPath(), remote: this.graph.currentRemote(),
-    refSpec: this.refName, remoteBranch: this.refName }).then(function() {
+  return this.server.postPromise('/push', { path: this.graph.repoPath(), remote: this.graph.currentRemote(), refSpec: this.refName, remoteBranch: this.refName })
+    .then(function() {
       var newRef = self.graph.getRef("refs/remotes/" + self.graph.currentRemote() + "/" + self.refName);
       newRef.node(self.node());
+    }).catch((e) => this.server.unhandledRejection(e));
+}
+RefViewModel.prototype.checkout = function() {
+  const isRemote = this.isRemoteBranch;
+  const isLocalCurrent = this.getLocalRef() && this.getLocalRef().current();
+
+  return Promise.resolve().then(() => {
+      if (isRemote && !isLocalCurrent) {
+        return this.server.postPromise('/branches', {
+          path: this.graph.repoPath(),
+          name: this.refName,
+          sha1: this.name,
+          force: true
+        });
+      }
+    }).then(() => this.server.postPromise('/checkout', { path: this.graph.repoPath(), name: this.refName }))
+    .then(() => {
+      if (isRemote && isLocalCurrent) {
+        return this.server.postPromise('/reset', { path: this.graph.repoPath(), to: this.name, mode: 'hard' });
+      }
+    }).then(() => {
+      this.graph.HEADref().node(this.node());
+    }).catch((err) => {
+      if (err.errorCode != 'merge-failed') this.server.unhandledRejection(err);
     });
 }

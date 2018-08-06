@@ -79,4 +79,39 @@ describe('[REMOTES]', () => {
       .ug.refAction('branchinclone', true, 'push')
       .ug.waitForElementNotVisible('[data-ta-action="push"]:not([style*="display: none"])')
   });
+
+  it('Check for fetching remote branches for the branch list', () => {
+    return environment.nm.ug.click('.branch .dropdown-toggle')
+      .ug.click('div.option input')
+      .wait(200)
+      .visible('li .octicon-broadcast')
+      .then((isVisble) => {
+        if (!isVisble) {
+          return environment.nm.ug.click('div.option input')
+            .wait('li .octicon-broadcast')
+        }
+      });
+  });
+
+  it('checkout remote branches with matching local branch at wrong place', () => {
+    return environment.nm.ug.moveRef('branchinclone', 'Init Commit 1')
+      .ug.click('.branch .dropdown-toggle')
+      .ug.click('[data-ta-clickable="checkoutrefs/remotes/origin/branchinclone"]')
+      .wait(200)
+      .wait('[data-ta-name="branchinclone"][data-ta-local="true"]')
+  });
+
+  it('Should be possible to commitnpush', () => {
+    return environment.nm.ug.createTestFile(`${testRepoPaths[2]}/commitnpush.txt`)
+      .ug.commitnpush('Commit & Push')
+      .wait('.nux')
+  });
+
+  it('Should be possible to commitnpush with ff', () => {
+    return environment.nm.ug.click('.amend-link')
+      .ug.click('.commit-grp .dropdown-toggle')
+      .ug.click('.commitnpush')
+      .ug.click('.modal-dialog .btn-primary')
+      .wait('.nux')
+  });
 });

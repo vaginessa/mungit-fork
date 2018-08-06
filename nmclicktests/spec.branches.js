@@ -67,17 +67,14 @@ describe('[BRANCHES]', () => {
 
   it('Check out a branch via selection', () => {
     return environment.nm.ug.click('.branch .dropdown-toggle')
-      .ug.click('[data-ta-clickable="checkoutbranch-2"]')
+      .ug.click('[data-ta-clickable="checkoutrefs/heads/branch-2"]')
       .ug.waitForElementNotVisible('#nprogress')
   });
 
   it('Delete a branch via selection', () => {
     return environment.nm.click('.branch .dropdown-toggle')
-      .wait('[data-ta-clickable="branch-3-remove"]')
-      .wait(500)
-      .click('[data-ta-clickable="branch-3-remove"]')
-      .wait(500)
-      .click('.modal-dialog .btn-primary')
+      .ug.click('[data-ta-clickable="refs/heads/branch-3-remove"]')
+      .ug.click('.modal-dialog .btn-primary')
       .ug.waitForElementNotVisible('#nprogress')
       .wait(500);
   });
@@ -89,13 +86,14 @@ describe('[BRANCHES]', () => {
 
   it('checkout cherypick base', () => {
     return environment.nm.ug.click('.branch .dropdown-toggle')
-      .ug.click('[data-ta-clickable="checkoutbranch-1"]')
+      .ug.click('[data-ta-clickable="checkoutrefs/heads/branch-1"]')
       .ug.waitForElementNotVisible('#nprogress')
   });
 
   it('cherrypick fail case', () => {
     return environment.nm.ug.click('[data-ta-clickable="node-clickable-0"]')
       .ug.click('[data-ta-action="cherry-pick"]:not([style*="display: none"]) .dropmask')
+      .wait(3000) // on windows clicking on cherry pick which results in conflicts might take some time
       .ug.click('.staging .btn-stg-abort')
       .ug.click('.modal-dialog .btn-primary')
       .wait(500)

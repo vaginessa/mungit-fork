@@ -13,6 +13,7 @@ const gitPromise = require('./git-promise');
 const fs = require('./utils/fs-async');
 const ignore = require('ignore');
 const Bluebird = require('bluebird');
+const crypto = require('crypto');
 
 const isMac = /^darwin/.test(process.platform);
 const isWindows = /^win/.test(process.platform);
@@ -169,9 +170,9 @@ exports.registerApi = (env) => {
       });
   }
 
-  const credentialsOption = (socketId) => {
+  const credentialsOption = (socketId, remote) => {
     const credentialsHelperPath = path.resolve(__dirname, '..', 'bin', 'credentials-helper').replace(/\\/g, '/');
-    return ['-c', `credential.helper=${credentialsHelperPath} ${socketId} ${config.port}`];
+    return ['-c', `credential.helper=${credentialsHelperPath} ${socketId} ${config.port} ${remote}`];
   }
 
   const getNumber = (value, nullValue) => {
@@ -199,7 +200,7 @@ exports.registerApi = (env) => {
     let url = req.body.url.trim();
     if (url.indexOf('git clone ') == 0) url = url.slice('git clone '.length);
     const task = gitPromise({
-      commands: credentialsOption(req.body.socketId).concat(['clone', url, req.body.destinationDir.trim()]),
+      commands: credentialsOption(req.body.socketId, url).concat(['clone', url, req.body.destinationDir.trim()]),
       repoPath: req.body.path,
       timeout: timeoutMs
     }).then(() => {
@@ -216,7 +217,7 @@ exports.registerApi = (env) => {
     if (res.setTimeout) res.setTimeout(timeoutMs);
 
     const task = gitPromise({
-      commands: credentialsOption(req.body.socketId).concat([
+      commands: credentialsOption(req.body.socketId, req.body.remote).concat([
           'fetch',
           req.body.remote,
           req.body.ref ? req.body.ref : '',
@@ -234,7 +235,7 @@ exports.registerApi = (env) => {
     const timeoutMs = 10 * 60 * 1000;
     if (res.setTimeout) res.setTimeout(timeoutMs);
     const task = gitPromise({
-      commands: credentialsOption(req.body.socketId).concat([
+      commands: credentialsOption(req.body.socketId, req.body.remote).concat([
           'push',
           req.body.remote,
           (req.body.refSpec ? req.body.refSpec : 'HEAD') + (req.body.remoteBranch ? `:${req.body.remoteBranch}` : ''),
@@ -284,7 +285,7 @@ exports.registerApi = (env) => {
   });
 
   app.post(`${exports.pathPrefix}/commit`, ensureAuthenticated, ensurePathExists, (req, res) => {
-    jsonResultOrFailProm(res, gitPromise.commit(req.body.path, req.body.amend, req.body.message, req.body.files))
+    jsonResultOrFailProm(res, gitPromise.commit(req.body.path, req.body.amend, req.body.emptyCommit, req.body.message, req.body.files))
       .then(emitGitDirectoryChanged.bind(null, req.body.path))
       .then(emitWorkingTreeChanged.bind(null, req.body.path));
   });
@@ -341,8 +342,8 @@ exports.registerApi = (env) => {
   });
 
   app.get(`${exports.pathPrefix}/branches`, ensureAuthenticated, ensurePathExists, (req, res) => {
-    const isFetchRemoteBranches = req.query.isFetchRemoteBranches == 'true'
-    jsonResultOrFailProm(res, gitPromise(['branch', isFetchRemoteBranches ? '-a' : ''], req.query.path)
+    const isLocalBranchOnly = req.query.isLocalBranchOnly == 'false';
+    jsonResultOrFailProm(res, gitPromise(['branch', isLocalBranchOnly ? '-a' : ''], req.query.path)
       .then(gitParser.parseGitBranches));
   });
 
@@ -359,7 +360,7 @@ exports.registerApi = (env) => {
   });
 
   app.delete(`${exports.pathPrefix}/remote/branches`, ensureAuthenticated, ensurePathExists, ensureValidSocketId, (req, res) => {
-    const commands = credentialsOption(req.query.socketId).concat(['push', req.query.remote, `:${req.query.name.trim()}`]);
+    const commands = credentialsOption(req.query.socketId, req.query.remote).concat(['push', req.query.remote, `:${req.query.name.trim()}`]);
     const task = gitPromise(commands, req.query.path)
       .catch(err => {
         if (!(err.stderr && err.stderr.indexOf("remote ref does not exist") > -1)) {
@@ -378,7 +379,7 @@ exports.registerApi = (env) => {
   });
 
   app.get(`${exports.pathPrefix}/remote/tags`, ensureAuthenticated, ensurePathExists, ensureValidSocketId, (req, res) => {
-    const task = gitPromise(credentialsOption(req.query.socketId).concat(['ls-remote', '--tags', req.query.remote]), req.query.path)
+    const task = gitPromise(credentialsOption(req.query.socketId, req.query.remote).concat(['ls-remote', '--tags', req.query.remote]), req.query.path)
       .then(gitParser.parseGitLsRemote)
       .then((result) => {
         result.forEach((r) => { r.remote = req.query.remote; });
@@ -400,36 +401,17 @@ exports.registerApi = (env) => {
   });
 
   app.delete(`${exports.pathPrefix}/remote/tags`, ensureAuthenticated, ensurePathExists, (req, res) => {
-    const commands = credentialsOption(req.query.socketId).concat(['push', `${req.query.remote} :"refs/tags${req.query.name.trim()}"`]);
+    const commands = credentialsOption(req.query.socketId, req.query.remote).concat(['push', `${req.query.remote} :"refs/tags${req.query.name.trim()}"`]);
 
     jsonResultOrFailProm(res, gitPromise(commands, req.query.path))
       .finally(emitGitDirectoryChanged.bind(null, req.query.path));
   });
 
-  const createBranchIfPossible = (branchName, path, retry) => {
-    retry = retry || 3;
-    return gitPromise(['branch', branchName], path).catch((e) => {
-        if (retry > -1) {
-          return createBranchIfPossible(`ungit-${crypto.randomBytes(4).toString('hex')}`, path, retry - 1);
-        } else {
-          throw e;
-        }
-      }).then(() => branchName);
-  }
-
   app.post(`${exports.pathPrefix}/checkout`, ensureAuthenticated, ensurePathExists, (req, res) => {
     const arg = !!req.body.sha1 ? ['checkout', '-b', req.body.name.trim(), req.body.sha1] : ['checkout', req.body.name.trim()];
-    const isRemote = !!req.body.name && req.body.name.indexOf('remote/') === 0;
 
-    jsonResultOrFailProm(res, autoStashExecuteAndPop(arg, req.body.path).then(() => {
-        if (isRemote) {
-          // preferred branch name will not work as expected when remote or branch nae has '/'
-          const preferredBranchName = `${req.body.name.splice('/').slice(2).join('/')}`
-          return createBranchIfPossible(preferredBranchName, req.body.path)
-            // sucessfully create the branch, checkout and be marry
-            .then((createdName) => return gitPromise(['checkout', createdName], req.body.path));
-        }
-      })).then(emitGitDirectoryChanged.bind(null, req.body.path))
+    jsonResultOrFailProm(res, autoStashExecuteAndPop(arg, req.body.path))
+      .then(emitGitDirectoryChanged.bind(null, req.body.path))
       .then(emitWorkingTreeChanged.bind(null, req.body.path));
   });
 
@@ -614,6 +596,7 @@ exports.registerApi = (env) => {
       return;
     }
     const socket = socketsById[req.query.socketId];
+    const remote = req.query.remote;
     if (!socket) {
       // We're using the socket to display an authentication dialog in the ui,
       // so if the socket is closed/unavailable we pretty much can't get the username/password.
@@ -621,7 +604,7 @@ exports.registerApi = (env) => {
       res.status(400).json({ errorCode: 'socket-unavailable' });
     } else {
       socket.once('credentials', (data) => res.json(data));
-      socket.emit('request-credentials');
+      socket.emit('request-credentials', {remote: remote});
     }
   });
 

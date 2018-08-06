@@ -25,8 +25,22 @@ Nightmare.action('ug', {
       .wait(1000)
       .then(done.bind(null, null), done);
   },
+  'commitnpush': function(commitMessage, done) {
+    this.wait('.files .file .btn-default')
+      .insert('.staging input.form-control', commitMessage)
+      .ug.click('.commit-grp .dropdown-toggle')
+      .ug.click('.commitnpush')
+      .then(done.bind(null, null), done);
+  },
   'amendCommit': function(done) {
     this.ug.click('.amend-link')
+      .click('.commit-btn')
+      .ug.waitForElementNotVisible('.files .file .btn-default')
+      .wait(1000)
+      .then(done.bind(null, null), done);
+  },
+  'emptyCommit': function(done) {
+    this.ug.click('.empty-commit-link')
       .click('.commit-btn')
       .ug.waitForElementNotVisible('.files .file .btn-default')
       .wait(1000)
@@ -166,7 +180,7 @@ class Environment {
     this.config.serverTimeout = this.config.serverTimeout || 15000;
     this.config.viewWidth = 2000;
     this.config.viewHeight = 2000;
-    this.config.showServerOutput = this.config.showServerOutput || true;
+    this.config.showServerOutput = this.config.showServerOutput === undefined ? true : this.config.showServerOutput;
     this.config.serverStartupOptions = this.config.serverStartupOptions || [];
     this.shuttinDown = false;
 
