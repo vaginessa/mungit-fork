@@ -181,7 +181,8 @@ module.exports = (grunt) => {
           // includes files within path
           { expand: true, flatten: true, src: ['node_modules/octicons/octicons/octicons.ttf'], dest: 'public/css/' },
           { expand: true, flatten: true, src: ['node_modules/octicons/octicons/octicons.woff'], dest: 'public/css/' },
-          { expand: true, flatten: true, src: ['node_modules/nprogress/nprogress.css'], dest: 'public/css/' }
+          { expand: true, flatten: true, src: ['node_modules/nprogress/nprogress.css'], dest: 'public/css/' },
+          { expand: true, flatten: true, src: ['node_modules/jquery-ui-bundle/jquery-ui.min.css'], dest: 'public/css/'}
         ]
       },
       electron: {
@@ -292,7 +293,6 @@ module.exports = (grunt) => {
     b.require('octicons', { expose: 'octicons'});
     b.require('nprogress', { expose: 'nprogress' });
     b.require('jquery', { expose: 'jquery' });
-    b.require('jquery-ui', { expose: 'jquery-ui' });
     b.require('dnd-page-scroll', { expose: 'dnd-page-scroll' });
     const outFile = fs.createWriteStream('./public/js/ungit.js');
     outFile.on('close', () => done());
