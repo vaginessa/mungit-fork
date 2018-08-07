@@ -22,6 +22,7 @@
 	if (ungit.config.bugtracking) {
 		console.log('Initing raven');
 
+    try {
     Raven.config('https://1ccfef6f2d3e41a2b74372e22546731c@sentry.io/244250', {
 			logger: 'root',
 			tags: {
@@ -30,11 +31,15 @@
       			deployment: ungit.config.desktopMode ? 'desktop' : 'web'
 			}
 		}).install();
-
-		Raven.setUser({
-			id: ungit.userHash
-		});
-
+      Raven.setUser({ id: ungit.userHash });
+    } catch(e) {
+      console.warn("Failed to initialize Raven.", e);
+      Raven = {
+        TraceKit: {
+          report: { subscribe: function() {} }
+        }
+      }
+    }
   }
 </script>
 <script type="text/javascript" src="__ROOT_PATH__/socket.io/socket.io.js"></script>
