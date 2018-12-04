@@ -2,6 +2,7 @@ const ko = require('knockout');
 const _ = require('lodash');
 const components = require('ungit-components');
 const programEvents = require('ungit-program-events');
+const storage = require('ungit-storage');
 const showRemote = 'showRemote';
 var octicon = require('octicons');
 const showBranch = 'showBranch';
@@ -18,13 +19,13 @@ class BranchesViewModel {
     this.server = server;
     this.branchesAndLocalTags = ko.observableArray();
     this.current = ko.observable();
-    this.isShowRemote = ko.observable(localStorage.getItem(showRemote) != 'false');
+    this.isShowRemote = ko.observable(storage.getItem(showRemote) != 'false');
     this.icon = octicon['git-branch'].toSVG({ "height": 20 });
-    this.isShowBranch = ko.observable(localStorage.getItem(showBranch) != 'false');
-    this.isShowTag = ko.observable(localStorage.getItem(showTag) != 'false');
+    this.isShowBranch = ko.observable(storage.getItem(showBranch) != 'false');
+    this.isShowTag = ko.observable(storage.getItem(showTag) != 'false');
     this.graph = graph;
     const setLocalStorageAndUpdate = (localStorageKey, value) => {
-      localStorage.setItem(localStorageKey, value);
+      storage.setItem(localStorageKey, value);
       this.updateRefs();
       return value;
     }

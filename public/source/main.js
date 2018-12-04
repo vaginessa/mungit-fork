@@ -13,6 +13,8 @@ var components = require('ungit-components');
 var Server = require('./server');
 var programEvents = require('ungit-program-events');
 var navigation = require('ungit-navigation');
+var storage = require('ungit-storage');
+var adBlocker = require('just-detect-adblock');
 
 // Request animation frame polyfill
 (function() {
@@ -83,9 +85,9 @@ ko.bindingHandlers.autocomplete = {
         // enter key is struck, navigate to the path
         event.preventDefault();
         navigation.browseTo(`repository?path=${encodeURIComponent(value)}`);
-      } else if (value === '' && localStorage.repositories) {
+      } else if (value === '' && storage.getItem('repositories')) {
         // if path is emptied out, show save path options
-        const folderNames = JSON.parse(localStorage.repositories).map((value) => {
+        const folderNames = JSON.parse(storage.getItem('repositories')).map((value) => {
           return {
             value: value,
             label: value.substring(value.lastIndexOf(ungit.config.fileSeparator) + 1)
@@ -148,10 +150,12 @@ exports.start = function() {
   app = components.create('app', { appContainer: appContainer, server: server });
   programEvents.add(function(event) {
     if (event.event == 'disconnected' || event.event == 'git-crash-error') {
-      appContainer.content(components.create('crash', event.event));
+      console.error(`ungit crash: ${event.event}`, event.error)
+      const err = event.event == 'disconnected' && adBlocker.isDetected() ? 'adblocker' : event.event;
+      appContainer.content(components.create('crash', err));
       windowTitle.crash = true;
       windowTitle.update();
-		} else if (event.event == 'connected') {
+    } else if (event.event == 'connected') {
       appContainer.content(app);
       windowTitle.crash = false;
       windowTitle.update();
@@ -167,7 +171,7 @@ exports.start = function() {
   }
 
   Raven.TraceKit.report.subscribe(function(event, err) {
-		appContainer.content(components.create('crash', event.event, err));
+    programEvents.dispatch({ event: 'raven-crash', error: err || event.event });
   });
 
   var prevTimestamp = 0;
