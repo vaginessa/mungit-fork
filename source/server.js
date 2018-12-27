@@ -11,7 +11,6 @@ const LocalStrategy = require('passport-local').Strategy;
 const semver = require('semver');
 const path = require('path');
 const fs = require('./utils/fs-async');
-const async = require('async');
 const signals = require('signals');
 const os = require('os');
 const cache = require('./utils/cache');
@@ -23,10 +22,10 @@ const jwt = require('jsonwebtoken');
 
 process.on('uncaughtException', (err) => {
   winston.error(err.stack ? err.stack.toString() : err.toString());
-  async.parallel([
-    bugtracker.notify.bind(bugtracker, err, 'ungit-server'),
-    usageStatistics.addEvent.bind(usageStatistics, 'server-exception')
-  ], () => process.exit());
+  Bluebird.all([
+    new Bluebird((resolve) => { bugtracker.notify.bind(bugtracker, err, 'ungit-launcher'); resolve(); }),
+    new Bluebird((resolve) => { usageStatistics.addEvent.bind(usageStatistics, 'launcher-exception'); resolve(); })
+  ]).then(() => { app.quit(); });
 });
 
 console.log('!! Setting log level to ' + config.logLevel);
@@ -138,9 +137,15 @@ let ensureAuthenticated = (req, res, next) => { next(); };
 
 if (config.authentication) {
   const cookieParser = require('cookie-parser');
+  const session = require('express-session')
+  const MemoryStore = require('memorystore')(session)
   app.use(cookieParser());
-  const session = require('express-session');
-  app.use(session({ secret: 'ungit' }));
+  app.use(session({
+    store: new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    }),
+    secret: 'ungit'
+  }));
   app.use(passport.initialize());
   app.use(passport.session());
 
@@ -372,18 +377,18 @@ app.get('/api/fs/exists', ensureAuthenticated, (req, res) => {
 });
 
 app.get('/api/fs/listDirectories', ensureAuthenticated, (req, res) => {
-  const dir = req.query.term.trim();
+  const dir = path.resolve(req.query.term.trim()).replace("/~", "");
+
   fs.readdirAsync(dir).then(filenames => {
     return filenames.map((filename) => path.join(dir, filename));
   }).filter((filepath) => {
-    return fs.statAsync(filepath).then((stat) => {
-      return stat.isDirectory();
-    }).catch(function() { return false; });
+    return fs.statAsync(filepath)
+      .then((stat) => stat.isDirectory())
+      .catch(() => false);
   }).then(filteredFiles => {
-    res.json(filteredFiles)
-  }).catch((err) => {
-    res.status(400).json(err)
-  });
+    filteredFiles.unshift(dir);
+    res.json(filteredFiles);
+  }).catch((err) => res.status(400).json(err));
 });
 
 // Error handling
@@ -396,7 +401,7 @@ app.use((err, req, res, next) => {
 
 exports.started = new signals.Signal();
 
-server.listen(config.port, () => {
+server.listen(config.port, config.ungitBindIp, () => {
   winston.info('Listening on port ' + config.port);
   console.log('## Mungit started ##'); // Consumed by bin/ungit to figure out when the app is started
   exports.started.dispatch();

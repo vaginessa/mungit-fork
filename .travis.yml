@@ -1,9 +1,9 @@
 sudo: required
 language: node_js
 node_js:
-  - "6"
-  - "7"
-  - "8"
+  - "7.10"
+  - "8.11"
+  - "9.11"
   - "node"
 branches:
   only:
@@ -16,9 +16,9 @@ env:
     - GIT_VERSION=edge
 matrix:
   exclude:
-    - node_js: "6.11"
-      env: GIT_VERSION=edge
     - node_js: "7.10"
+      env: GIT_VERSION=edge
+    - node_js: "8.11"
       env: GIT_VERSION=edge
 addons:
   apt:
@@ -30,9 +30,8 @@ addons:
 install:
   - export DISPLAY=':99.0'
   - Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-  - npm install
+  - npm install --unsafe-perm=true --allow-root
 before_script:
-  - if [[ `npm --version` != 5* ]]; then npm cache clean; fi
   - npm install -g grunt-cli
   - if [ "$GIT_VERSION" = "edge" ]; then sudo add-apt-repository ppa:git-core/ppa -y && sudo apt-get update -q && sudo apt-get install -y git; fi
   - git config --global user.email "test@testy.com"

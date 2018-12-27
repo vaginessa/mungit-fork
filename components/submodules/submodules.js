@@ -1,88 +1,73 @@
 
-var ko = require('knockout');
-var components = require('ungit-components');
-var programEvents = require('ungit-program-events');
+const ko = require('knockout');
+const components = require('ungit-components');
+const programEvents = require('ungit-program-events');
 
-components.register('submodules', function(args) {
-  return new SubmodulesViewModel(args.server, args.repoPath);
-});
+components.register('submodules', args => new SubmodulesViewModel(args.server, args.repoPath));
 
-function SubmodulesViewModel(server, repoPath) {
-  var self = this;
-  this.repoPath = repoPath;
-  this.server = server;
-  this.submodules = ko.observableArray();
+class SubmodulesViewModel {
+  constructor(server, repoPath) {
+    this.repoPath = repoPath;
+    this.server = server;
+    this.submodules = ko.observableArray();
+    this.isUpdating = false;
+  }
 
-  this.updateProgressBar = components.create('progressBar', { predictionMemoryKey: 'Updating Submodules', temporary: true });
-  this.fetchProgressBar = components.create('progressBar', { predictionMemoryKey: 'Adding Submodule', temporary: true });
-}
+  onProgramEvent(event) {
+    if (event.event == 'submodule-fetch') this.fetchSubmodules();
+  }
 
-SubmodulesViewModel.prototype.onProgramEvent = function(event) {
-  if (event.event == 'submodule-fetch') this.fetchSubmodules();
-}
-
-SubmodulesViewModel.prototype.updateNode = function(parentElement) {
-  this.fetchSubmodules().then(function(submoduleViewModel) {
-    ko.renderTemplate('submodules', submoduleViewModel, {}, parentElement);
-  });
-}
-
-SubmodulesViewModel.prototype.fetchSubmodules = function() {
-  var self = this;
-  return this.server.getPromise('/submodules', { path: this.repoPath() })
-    .then(function(submodules) {
-      self.submodules(submodules && Array.isArray(submodules) ? submodules : []);
-      return self;
+  updateNode(parentElement) {
+    this.fetchSubmodules().then(submoduleViewModel => {
+      ko.renderTemplate('submodules', submoduleViewModel, {}, parentElement);
     });
-}
+  }
 
-SubmodulesViewModel.prototype.isRunning = function() {
-  return (this.updateProgressBar.running() || this.fetchProgressBar.running());
-}
+  fetchSubmodules() {
+    return this.server.getPromise('/submodules', { path: this.repoPath() })
+      .then(submodules => {
+        this.submodules(submodules && Array.isArray(submodules) ? submodules : []);
+        return this;
+      }).catch((e) => this.server.unhandledRejection(e));
+  }
 
-SubmodulesViewModel.prototype.updateSubmodules = function() {
-  if (this.isRunning()) return;
-  var self = this;
+  updateSubmodules() {
+    if (this.isUpdating) return;
+    this.isUpdating = true;
+    return this.server.postPromise('/submodules/update', { path: this.repoPath() })
+      .catch((e) => this.server.unhandledRejection(e))
+      .finally(() => { this.isUpdating = false; });
+  }
 
-  this.updateProgressBar.start();
-  return this.server.postPromise('/submodules/update', { path: this.repoPath() }).finally(function() {
-    self.updateProgressBar.stop();
-  });
-}
+  showAddSubmoduleDialog() {
+    components.create('addsubmoduledialog')
+      .show()
+      .closeThen((diag) => {
+        if (!diag.isSubmitted()) return;
+        this.isUpdating = true;
+        this.server.postPromise('/submodules/add', { path: this.repoPath(), submoduleUrl: diag.url(), submodulePath: diag.path() })
+          .then(() => { programEvents.dispatch({ event: 'submodule-fetch' }); })
+          .catch((e) => this.server.unhandledRejection(e))
+          .finally(() => { this.isUpdating = false; });
+      });
+  }
 
-SubmodulesViewModel.prototype.showAddSubmoduleDialog = function() {
-  var self = this;
-  components.create('addsubmoduledialog')
-    .show()
-    .closeThen(function(diag) {
-      if (!diag.isSubmitted()) return;
-      self.fetchProgressBar.start();
-      self.server.postPromise('/submodules/add', { path: self.repoPath(), submoduleUrl: diag.url(), submodulePath: diag.path() }).then(function() {
-          programEvents.dispatch({ event: 'submodule-fetch' });
-        }).finally(function() { self.fetchProgressBar.stop(); });
-    });
-}
+  submoduleLinkClick(submodule) {
+    window.location.href = submodule.url;
+  }
 
-SubmodulesViewModel.prototype.submoduleLinkClick = function(submodule) {
-  window.location.href = submodule.url;
-}
+  submodulePathClick(submodule) {
+    window.location.href = document.URL + ungit.config.fileSeparator + submodule.path;
+  }
 
-SubmodulesViewModel.prototype.submodulePathClick = function(submodule) {
-  window.location.href = document.URL + ungit.config.fileSeparator + submodule.path;
-}
-
-SubmodulesViewModel.prototype.submoduleRemove = function(submodule) {
-  var self = this;
-  components.create('yesnodialog', { title: 'Are you sure?', details: 'Deleting ' + submodule.name + ' submodule cannot be undone with ungit.'})
-    .show()
-    .closeThen(function(diag) {
-      if (!diag.result()) return;
-      self.fetchProgressBar.start();
-      self.server.delPromise('/submodules', { path: self.repoPath(), submodulePath: submodule.path, submoduleName: submodule.name }).catch(function(err, result) {
-        console.log(err);
-      }).then(function() {
-        programEvents.dispatch({ event: 'submodule-fetch' });
-        self.fetchProgressBar.stop();
-      })
-    });
+  submoduleRemove(submodule) {
+    components.create('yesnodialog', { title: 'Are you sure?', details: `Deleting ${submodule.name} submodule cannot be undone with ungit.`})
+      .show()
+      .closeThen((diag) => {
+        if (!diag.result()) return;
+        this.server.delPromise('/submodules', { path: this.repoPath(), submodulePath: submodule.path, submoduleName: submodule.name })
+          .then(() => { programEvents.dispatch({ event: 'submodule-fetch' }); })
+          .catch((e) => this.server.unhandledRejection(e));
+      });
+  }
 }

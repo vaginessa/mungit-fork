@@ -19,6 +19,17 @@ describe('[REMOTES]', () => {
     return environment.nm.ug.openUngit(testRepoPaths[1]);
   });
 
+  it('Should not be possible to push without remote', () => {
+    return environment.nm.ug.click(`.branch[data-ta-name="master"][data-ta-local="true"]`)
+      .ug.waitForElementNotVisible('[data-ta-action="push"]:not([style*="display: none"])');
+  });
+
+  it('Should not be possible to commit & push without remote', () => {
+    return environment.nm.ug.click('.amend-link')
+      .ug.click('.commit-grp .dropdown-toggle')
+      .wait('.commitnpush.disabled');
+  });
+
   it('Adding a remote', () => {
     return environment.nm.ug.click('.fetchButton .dropdown-toggle')
       .ug.click('.add-new-remote')
@@ -34,14 +45,14 @@ describe('[REMOTES]', () => {
   it('Fetch from newly added remote', () => {
     return environment.nm.click('.fetchButton .btn-main')
       .wait(500)
-      .ug.waitForElementNotVisible('.fetchButton .btn-main .progress')
+      .ug.waitForElementNotVisible('#nprogress')
   });
 
   it('Remote delete check', () => {
     return environment.nm.click('.fetchButton .dropdown-toggle')
       .ug.click('[data-ta-clickable="myremote-remove"]')
       .ug.click('.modal-dialog .btn-primary')
-      .ug.waitForElementNotVisible('.progress')
+      .ug.waitForElementNotVisible('#nprogress')
       .ug.click('.fetchButton .dropdown-toggle')
       .exists('[data-ta-clickable="myremote"]')
       .then((isVisible) => { if (isVisible) throw new Error('Remote exists after delete'); });
@@ -57,8 +68,6 @@ describe('[REMOTES]', () => {
     return environment.nm.insert('#cloneFromInput', testRepoPaths[1])
       .insert('#cloneToInput', testRepoPaths[2])
       .ug.click('.uninited input[type="submit"]')
-      .refresh()  // this is currently neccessary as cloning -> repo view transition is not straight forward
-                  // and previous test depends on mouse wiggle that triggers refresh.
       .wait('.repository-view')
       .exists('[data-ta-container="remote-error-popup"]')
       .then((isVisible) => { if (isVisible) throw new Error('Should not find remote error popup'); });
@@ -66,8 +75,8 @@ describe('[REMOTES]', () => {
 
   it('Should be possible to fetch', () => {
     return environment.nm.click('.fetchButton .btn-main')
-      .wait('.fetchButton .btn-main .progress')
-      .ug.waitForElementNotVisible('.fetchButton .btn-main.progress');
+      .wait('#nprogress')
+      .ug.waitForElementNotVisible('#nprogress');
   });
 
   it('Should be possible to create and push a branch', () => {
@@ -80,5 +89,40 @@ describe('[REMOTES]', () => {
     return environment.nm.ug.moveRef('branchinclone', 'Init Commit 0')
       .ug.refAction('branchinclone', true, 'push')
       .ug.waitForElementNotVisible('[data-ta-action="push"]:not([style*="display: none"])')
+  });
+
+  it('Check for fetching remote branches for the branch list', () => {
+    return environment.nm.ug.click('.branch .dropdown-toggle')
+      .ug.click('div.option input')
+      .wait(200)
+      .visible('li .octicon-broadcast')
+      .then((isVisble) => {
+        if (!isVisble) {
+          return environment.nm.ug.click('div.option input')
+            .wait('li .octicon-broadcast')
+        }
+      });
+  });
+
+  it('checkout remote branches with matching local branch at wrong place', () => {
+    return environment.nm.ug.moveRef('branchinclone', 'Init Commit 1')
+      .ug.click('.branch .dropdown-toggle')
+      .ug.click('[data-ta-clickable="checkoutrefs/remotes/origin/branchinclone"]')
+      .wait(200)
+      .wait('[data-ta-name="branchinclone"][data-ta-local="true"]')
+  });
+
+  it('Should be possible to commitnpush', () => {
+    return environment.nm.ug.createTestFile(`${testRepoPaths[2]}/commitnpush.txt`)
+      .ug.commitnpush('Commit & Push')
+      .wait('.nux')
+  });
+
+  it('Should be possible to commitnpush with ff', () => {
+    return environment.nm.ug.click('.amend-link')
+      .ug.click('.commit-grp .dropdown-toggle')
+      .ug.click('.commitnpush')
+      .ug.click('.modal-dialog .btn-primary')
+      .wait('.nux')
   });
 });

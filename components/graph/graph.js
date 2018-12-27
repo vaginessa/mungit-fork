@@ -1,5 +1,6 @@
 var ko = require('knockout');
 var components = require('ungit-components');
+var programEvents = require('ungit-program-events');
 var GitNodeViewModel = require('./git-node');
 var GitRefViewModel = require('./git-ref');
 var _ = require('lodash');
@@ -18,11 +19,6 @@ function GraphViewModel(server, repoPath) {
   this.skip = ko.observable(0);
   this.server = server;
   this.currentRemote = ko.observable();
-  this.nodesLoader = components.create('progressBar', {
-    predictionMemoryKey: 'gitgraph-' + self.repoPath(),
-    fallbackPredictedTimeMs: 1000,
-    temporary: true
-  });
   this.nodes = ko.observableArray();
   this.edges = ko.observableArray();
   this.refs = ko.observableArray();
@@ -108,32 +104,16 @@ GraphViewModel.prototype.loadNodesFromApi = function() {
   var self = this;
   var nodeSize = self.nodes().length;
 
-  this.nodesLoader.start();
-  return this.server.getPromise('/log', { path: this.repoPath(), limit: this.limit(), skip: this.skip() })
+  return this.server.getPromise('/gitlog', { path: this.repoPath(), limit: this.limit(), skip: this.skip() })
     .then(function(log) {
       // set new limit and skip
       self.limit(parseInt(log.limit));
       self.skip(parseInt(log.skip));
       return log.nodes || [];
     }).then(function(nodes) {
-      // check for deleted refs to update the UI
-      var updatedRefs = [];
-      nodes.forEach(function(logEntry) {
-        updatedRefs = updatedRefs.concat(logEntry.refs);
-      });
-      Object.keys(self.refsByRefName).forEach(function(refName) {
-        if (updatedRefs.indexOf(refName) < 0) {
-          self.refs.remove(self.refsByRefName[refName]);
-          var ref = self.refsByRefName[refName];
-          if (ref) { ref.node(null); }
-          delete self.refsByRefName[refName]
-        }
-      });
-      return nodes;
-    }).then(function(nodes) {
       // create and/or calculate nodes
-      return self.computeNode(nodes.map(function(logEntry) {
-        return self.getNode(logEntry.sha1, logEntry);
+      return self.computeNode(nodes.map((logEntry) => {
+        return self.getNode(logEntry.sha1, logEntry);     // convert to node object
       }));
     }).then(function(nodes) {
       // create edges
@@ -151,8 +131,9 @@ GraphViewModel.prototype.loadNodesFromApi = function() {
         self.graphHeight(nodes[nodes.length - 1].cy() + 80);
       }
       self.graphWidth(1000 + (self.heighstBranchOrder * 90));
-    }).finally(function() {
-      self.nodesLoader.stop();
+      programEvents.dispatch({ event: 'init-tooltip' });
+    }).catch((e) => this.server.unhandledRejection(e))
+    .finally(function() {
       if (window.innerHeight - self.graphHeight() > 0 && nodeSize != self.nodes().length) {
         self.scrolledToEnd();
       }
@@ -194,7 +175,7 @@ GraphViewModel.prototype.computeNode = function(nodes) {
     if (node.ancestorOfHEADTimeStamp == updateTimeStamp) continue;
     var ideologicalBranch = node.ideologicalBranch();
 
-    // First occurence of the branch, find an empty slot for the branch
+    // First occurrence of the branch, find an empty slot for the branch
     if (ideologicalBranch.lastSlottedTimeStamp != updateTimeStamp) {
       ideologicalBranch.lastSlottedTimeStamp = updateTimeStamp;
       ideologicalBranch.branchOrder = branchSlotCounter++
@@ -302,17 +283,35 @@ GraphViewModel.prototype.updateBranches = function() {
   this.server.getPromise('/checkout', { path: this.repoPath() })
     .then(function(res) { self.checkedOutBranch(res); })
     .catch(function(err) {
-      if (err.errorCode != 'not-a-repository') throw err;
+      if (err.errorCode != 'not-a-repository') self.server.unhandledRejection(err);
     })
 }
 GraphViewModel.prototype.setRemoteTags = function(remoteTags) {
-  var self = this;
-  var nodeIdsToRemoteTags = {};
-  remoteTags.forEach(function(ref) {
-    if (ref.name.indexOf('^{}') != -1) {
-      var tagRef = ref.name.slice(0, ref.name.length - '^{}'.length);
-      var name = 'remote-tag: ' + ref.remote + '/' + tagRef.split('/')[2];
-      self.getRef(name).node(self.getNode(ref.sha1));
+  const version = Date.now();
+
+  const sha1Map = {}; // map holding true sha1 per tags
+  remoteTags.forEach(tag => {
+    if (tag.name.indexOf('^{}') !== -1) {
+      // This tag is a dereference tag, use this sha1.
+      const tagRef = tag.name.slice(0, tag.name.length - '^{}'.length);
+      sha1Map[tagRef] = tag.sha1
+    } else if (!sha1Map[tag.name]) {
+      // If sha1 wasn't previously set, use this sha1
+      sha1Map[tag.name] = tag.sha1
+    }
+  });
+
+  remoteTags.forEach((ref) => {
+    if (ref.name.indexOf('^{}') === -1) {
+      const name = `remote-tag: ${ref.remote}/${ref.name.split('/')[2]}`;
+      this.getRef(name).node(this.getNode(sha1Map[ref.name]));
+      this.getRef(name).version = version;
+    }
+  });
+  this.refs().forEach((ref) => {
+    // tag is removed from another source
+    if (ref.isRemoteTag && (!ref.version || ref.version < version)) {
+      ref.remove(true);
     }
   });
 }

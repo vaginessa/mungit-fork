@@ -1,4 +1,5 @@
 'use strict';
+const winston = require('winston');
 const child_process = require('child_process');
 const Bluebird = require('bluebird');
 const Nightmare = require('nightmare');
@@ -13,21 +14,35 @@ module.exports = (config) => new Environment(config);
 
 Nightmare.action('ug', {
   'log': function(message, done) {
-    console.log(`>>> ${message}`);
+    winston.info(`>>> ${message}`);
     done();
   },
   'commit': function(commitMessage, done) {
     this.wait('.files .file .btn-default')
       .insert('.staging input.form-control', commitMessage)
       .wait(100)
-      .click('.commit-btn')
+      .ug.click('.commit-btn')
       .ug.waitForElementNotVisible('.files .file .btn-default')
       .wait(1000)
       .then(done.bind(null, null), done);
   },
+  'commitnpush': function(commitMessage, done) {
+    this.wait('.files .file .btn-default')
+      .insert('.staging input.form-control', commitMessage)
+      .ug.click('.commit-grp .dropdown-toggle')
+      .ug.click('.commitnpush')
+      .then(done.bind(null, null), done);
+  },
   'amendCommit': function(done) {
     this.ug.click('.amend-link')
-      .click('.commit-btn')
+      .ug.click('.commit-btn')
+      .ug.waitForElementNotVisible('.files .file .btn-default')
+      .wait(1000)
+      .then(done.bind(null, null), done);
+  },
+  'emptyCommit': function(done) {
+    this.ug.click('.empty-commit-link')
+      .ug.click('.commit-btn')
       .ug.waitForElementNotVisible('.files .file .btn-default')
       .wait(1000)
       .then(done.bind(null, null), done);
@@ -77,12 +92,12 @@ Nightmare.action('ug', {
       .then(done.bind(null, null), done);
   },
   'createTempFolder': function(done) {
-    console.log('Creating temp folder');
+    winston.info('Creating temp folder');
     this.ug.backgroundAction('POST', `${rootUrl}/api/testing/createtempdir`, undefined)
       .then(done.bind(null, null), done);
   },
   'createFolder': function(dir, done) {
-    console.log(`Create folder: ${dir}`);
+    winston.info(`Create folder: ${dir}`);
     this.ug.backgroundAction('POST', `${rootUrl}/api/createdir`, { dir: dir })
       .then(done.bind(null, null), done);
   },
@@ -110,21 +125,22 @@ Nightmare.action('ug', {
       }).then(done.bind(null, null), done);
   },
   'refAction': function(ref, local, action, done) {
-    this.click(`.branch[data-ta-name="${ref}"][data-ta-local="${local}"]`)
+    this.ug.click(`.branch[data-ta-name="${ref}"][data-ta-local="${local}"]`)
       .ug.click(`[data-ta-action="${action}"]:not([style*="display: none"]) .dropmask`)
       .then(() => this.ug._verifyRefAction(action))
       .then(done.bind(null, null), done);
   },
   'moveRef': function(ref, targetNodeCommitTitle, done) {
-    this.click(`.branch[data-ta-name="${ref}"]`)
+    this.ug.click(`.branch[data-ta-name="${ref}"]`)
       .ug.click(`[data-ta-node-title="${targetNodeCommitTitle}"] [data-ta-action="move"]:not([style*="display: none"]) .dropmask`)
       .then(() => this.ug._verifyRefAction('move'))
       .then(done.bind(null, null), done);
   },
   '_createRef': function(type, name, done) {
-    this.click('.current ~ .newRef button.showBranchingForm')
+    this.ug.click('.current ~ .newRef button.showBranchingForm')
       .insert('.newRef.editing input', name)
       .wait(100)
+      // cannot use .ug.click as wait op will defocus and doms will disappear
       .click(`.newRef ${type === 'branch' ? '.btn-primary' : '.btn-default'}`)
       .wait(`.ref.${type}[data-ta-name="${name}"]`)
       .wait(300)
@@ -140,7 +156,9 @@ Nightmare.action('ug', {
     this.wait(selector)
       .wait(300)
       .click(selector)
-      .wait(800)
+      .wait(300)
+      .mouseover('img.headerLogo')
+      .wait(300)
       .then(done.bind(null, null), done);
   },
   'openUngit': function(tempDirPath, done) {
@@ -160,23 +178,23 @@ const prependLines = (pre, text) => {
 // Environment provides
 class Environment {
   constructor(config) {
-    this.nm = Nightmare({ Promise: Bluebird });
+    this.nm = Nightmare({ Promise: Bluebird, typeInterval: 500, show: false });
     this.config = config || {};
     this.config.rootPath = (typeof this.config.rootPath === 'string') ? this.config.rootPath : '';
     this.config.serverTimeout = this.config.serverTimeout || 15000;
     this.config.viewWidth = 2000;
     this.config.viewHeight = 2000;
-    this.config.showServerOutput = this.config.showServerOutput || true;
+    this.config.showServerOutput = this.config.showServerOutput === undefined ? true : this.config.showServerOutput;
     this.config.serverStartupOptions = this.config.serverStartupOptions || [];
     this.shuttinDown = false;
 
     // init
     this.nm.viewport(this.config.viewWidth, this.config.viewHeight);
     this.nm.on('console', (type, msg1, msg2) => {
-      console.log(`[ui ${type}] ${(new Date()).toISOString()}  - ${msg1} ${JSON.stringify(msg2)}`);
+      winston.info(`[ui ${type}] ${(new Date()).toISOString()}  - ${msg1} ${JSON.stringify(msg2)}`);
 
       if (type === 'error' && !this.shuttinDown) {
-        console.log('ERROR DETECTED!');
+        winston.info('ERROR DETECTED!');
       }
     })
   }
@@ -218,7 +236,7 @@ class Environment {
     return this.getPort()
       .then(() => this.startServer())
       .then(() => this.ensureStarted())
-      .catch((err) => { console.log(err); throw new Error("Cannot confirm ungit start!!", err); })
+      .catch((err) => { winston.error(err); throw new Error("Cannot confirm ungit start!!", err); })
   }
 
   createRepos(testRepoPaths, config) {
@@ -263,7 +281,7 @@ class Environment {
   }
 
   startServer() {
-    console.log('Starting ungit server...', this.config.serverStartupOptions);
+    winston.info('Starting ungit server...', this.config.serverStartupOptions);
 
     this.hasStarted = false;
     const options = ['bin/ungit',
@@ -279,36 +297,36 @@ class Environment {
       '--maxNAutoRestartOnCrash=0',
       '--no-autoCheckoutOnBranchCreate',
       '--alwaysLoadActiveBranch',
-      '--logGitCommands']
+      `--numRefsToShow=${this.config.numRefsToShow || 5}`]
       .concat(this.config.serverStartupOptions);
     const ungitServer = child_process.spawn('node', options);
     ungitServer.stdout.on('data', (stdout) => {
       const stdoutStr = stdout.toString();
-      if (this.config.showServerOutput) console.log(prependLines('[server] ', stdoutStr));
+      if (this.config.showServerOutput) winston.verbose(prependLines('[server] ', stdoutStr));
 
       if (stdoutStr.indexOf('Ungit server already running') >= 0) {
-        console.log('server-already-running');
+        winston.info('server-already-running');
       }
 
       if (stdoutStr.indexOf('## Mungit started ##') >= 0) {
         if (this.hasStarted) {
-          console.log('Ungit started twice, probably crashed.');
+          winston.info('Ungit started twice, probably crashed.');
         } else {
           this.hasStarted = true;
-          console.log('Ungit server started.');
+          winston.info('Ungit server started.');
         }
       }
     });
     ungitServer.stderr.on("data", (stderr) => {
       const stderrStr = stderr.toString();
-      console.error(prependLines('[server ERROR] ', stderrStr));
+      winston.error(prependLines('[server ERROR] ', stderrStr));
       if (stderrStr.indexOf("EADDRINUSE") > -1) {
-        console.log("retrying with different port");
+        winston.info("retrying with different port");
         ungitServer.kill('SIGINT');
         this.getPort().then(() => this.startServer());
       }
     });
-    ungitServer.on('exit', () => console.log('UNGIT SERVER EXITED'));
+    ungitServer.on('exit', () => winston.info('UNGIT SERVER EXITED'));
     return Bluebird.resolve();
   }
 }

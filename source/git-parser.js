@@ -83,6 +83,20 @@ const gitLogHeaders = {
       currentCommmit.reflogAuthorName = author;
     }
   },
+  'gpg': (currentCommit, data) => {
+    if (data.startsWith('Signature made')) {
+      // extract sign date
+      currentCommit.signatureDate = data.slice('Signature made '.length);
+    } else if (data.indexOf('Good signature from') > -1) {
+      // fully verified.
+      currentCommit.signatureMade = data.slice('Good signature from '.length)
+        .replace('[ultimate]', '')
+        .trim();
+    } else if (data.indexOf('Can\'t check signature') > -1) {
+      // pgp signature attempt is made but failed to verify
+      delete currentCommit.signatureDate;
+    }
+  }
 };
 exports.parseGitLog = (data) => {
   const commits = [];
@@ -246,7 +260,9 @@ exports.parseGitSubmodule = (text, args) => {
     }
   });
 
-  return submodules;
+  let sorted_submodules = submodules.sort((a,b) => a.name.localeCompare(b.name));
+
+  return sorted_submodules;
 }
 
 const updatePatchHeader = (result, lastHeaderIndex, ignoredDiffCountTotal, ignoredDiffCountCurrent) => {
