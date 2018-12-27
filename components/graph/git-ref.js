@@ -4,6 +4,7 @@ const Selectable = require('./selectable');
 const programEvents = require('ungit-program-events');
 const components = require('ungit-components');
 const promise = require('bluebird');
+const octicon = require('octicons');
 
 class RefViewModel extends Selectable {
   constructor(fullRefName, graph) {
@@ -58,6 +59,19 @@ class RefViewModel extends Selectable {
     this.node.subscribe(newNode => {
       if (newNode) newNode.pushRef(this);
     });
+
+    this.branchIcon = ko.computed(() => {
+      if(this.isLocalBranch && this.graph.checkedOutBranch() == this.refName) {
+        return octicon['git-branch'].toSVG({ "height": 28 });
+      }
+      else {
+        return octicon['git-branch'].toSVG({ "height": 20 });
+      }
+    });
+
+    this.remoteIcon = octicon.broadcast.toSVG({ "height": 20 });
+    this.globeIcon = octicon.globe.toSVG({ "height": 20 });
+    this.tagIcon = octicon.tag.toSVG({ "height": 20 });
 
     // This optimization is for autocomplete display
     this.value = splitedName[splitedName.length - 1]
