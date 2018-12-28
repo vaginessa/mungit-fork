@@ -3,7 +3,7 @@ const cache = require('./utils/cache');
 const sysinfo = require('./sysinfo');
 const getmac = require('getmac');
 const winston = require('winston');
-const keenio = require('keen-js');
+const keenio = require('keen-tracking');
 
 const _PROJECT_ID = '5a097593c9e77c0001099055';
 const _WRITE_KEY = '60DB4CB04DEF91400BDEB9825D90407DEE4288E76EE59EA87EC4125FC7BCBD9DDC087DE9F6E910B3219EFF772F609F7D6F3CCCCC848DBB7C636136A484503D260BE723234D6D996859F4122297A62811F290CBA1D278D5B9062B57BAC92978EF';

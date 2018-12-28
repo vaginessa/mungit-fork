@@ -238,7 +238,8 @@ module.exports = (grunt) => {
     babel: {
       prod: {
         options: {
-          presets: ['@babel/preset-es2015', '@babel/preset-stage-0']
+          presets: ['@babel/preset-env'],
+          plugins: ['@babel/plugin-proposal-function-bind']
         },
         files: [{
             expand: true,
