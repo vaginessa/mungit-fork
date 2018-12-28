@@ -1,38 +1,14 @@
 # Contributing Guidelines
 
-These are the contributing guidelines as well as some documentation on how the code is structured. Read up before contributing to make everything as smooth as possible.
-
-## Posting issues
-
-Just common sense; do a quick search before posting, someone might already have created an issue (or resolved the problem!). If you're posting a bug; try to include as much relevant information as possible (ungit version, node and npm version, os, any git errors displayed, the output from CLI console and output from the browser console).
-
-## Pull requests
-
-All PRs are automatically published to NPM once merged (see [#823](https://github.com/FredrikNoren/ungit/issues/823)).
-There are two things you have to do for all PRs:
-
-- Make sure to include a note in CHANGELOG.md about the change as part of the PR.
-- If it's a code change: Bump the version in `package.json` and `package-lock.json`.
-  - Does the change fundamentally change how people use Ungit: Bump the major version.
-  - Does the change introduce new features: Bump the minor version.
-  - Otherwise (bug fixes, tweaks, and refactoring): Bump patch version.
-  - If the change doesn't affect the product (e.g. you change the README): No need to bump the version.
-
-## Writing plugins
-
-See [PLUGINS.md](PLUGINS.md)
-
-## Developing for Ungit proper
-
-I do accept pull requests, but I also reserve the right to not do so for things I don't think fit with Ungit. If you are developing anything new you should almost always also provide tests for it, preferably click tests but it doesn't hurt to write REST-interface tests as well if applicable. Try to post pull requests early, even at a concept stage, to get feedback and increase chances it's merged.
+Mungit is a fork of Ungit and the main motivations are to have a personal flavour of it. Altough all pull requests are warmly welcome to the development branch in this repo, it is encouraged to seek and help out the [original project](https://github.com/FredrikNoren/ungit) - unless, of course, you see the benefits of changes made in mungit.
 
 ### What you need to get started
 
-You'll need the same as for Ungit; node, npm, and git. You will also need grunt (`npm install -g grunt-cli`).
+You'll need the same as for Mungit; node, npm, and git. You will also need grunt (`npm install -g grunt-cli`).
 
 ### Getting started
 
-To get started developing on Ungit:
+To get started developing on Mungit:
 
  1. Make sure you have [node.js](https://nodejs.org/), [npm](https://www.npmjs.com/) and [git](https://git-scm.com/) installed.
  2. Clone the repository to a local directory.
@@ -41,7 +17,7 @@ To get started developing on Ungit:
  5. Type `npm start` to start ungit, or `npm test` to run tests.
  6. (Optional). Run `npm run watch` to automatically rebuild stuff when you change files.
 
-### Run ungit as a standalone application
+### Run Mungit as a standalone application
 
 To provide easier access to launch ungit, very early stage of standalone application container using [electron](https://electronjs.org/) is available.
 Please note this is not yet ready for public release and being developed having several known & unknown limitations.
