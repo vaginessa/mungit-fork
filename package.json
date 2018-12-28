@@ -6,7 +6,7 @@
     "Sten Feldman <exile@chamber.ee> (http://sten.feldman.eesti.ee/)"
   ],
   "description": "Git made easy, a fork of ungit",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "ungitPluginApiVersion": "0.2.0",
   "scripts": {
     "start": "node ./bin/mungit",

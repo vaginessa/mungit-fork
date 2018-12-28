@@ -144,7 +144,9 @@ if (config.authentication) {
     store: new MemoryStore({
       checkPeriod: 86400000 // prune expired entries every 24h
     }),
-    secret: 'ungit'
+    secret: 'mungit',
+    resave: false,
+    saveUninitialized: false
   }));
   app.use(passport.initialize());
   app.use(passport.session());
