@@ -1,9 +1,11 @@
 sudo: required
 language: node_js
 node_js:
-  - "7.10"
-  - "8.11"
-  - "9.11"
+  - "6"
+  - "7"
+  - "8"
+  - "9"
+  - "10"
   - "node"
 branches:
   only:
@@ -16,9 +18,11 @@ env:
     - GIT_VERSION=edge
 matrix:
   exclude:
-    - node_js: "7.10"
+    - node_js: "6"
       env: GIT_VERSION=edge
-    - node_js: "8.11"
+    - node_js: "7"
+      env: GIT_VERSION=edge
+    - node_js: "8"
       env: GIT_VERSION=edge
 addons:
   apt:

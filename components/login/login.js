@@ -3,7 +3,7 @@ const ko = require('knockout');
 const components = require('ungit-components');
 const signals = require('signals');
 
-components.register('login', args => new LoginViewModel(args.server));
+components.register('login', args => new LoginViewModel(args.server, args.token));
 
 class LoginViewModel {
   constructor(server, token) {
