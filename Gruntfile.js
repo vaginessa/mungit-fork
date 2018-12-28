@@ -11,25 +11,16 @@ const maxConcurrency = 5;
 
 module.exports = (grunt) => {
   const packageJson = grunt.file.readJSON('package.json');
+  const lessFiles = {
+    "public/css/styles.css": ["public/less/styles.less", "public/vendor/css/animate.css", "public/less/d2h.less"]
+  }
+  fs.readdirSync("./components").map((component) => `components/${component}/${component}`)
+    .forEach((str) => lessFiles[`${str}.css`] = `${str}.less`);
 
   grunt.initConfig({
     pkg: packageJson,
     less: {
-      production: {
-        files: {
-          "public/css/styles.css": ["public/less/styles.less", "public/vendor/css/animate.css", "public/less/d2h.less"],
-          "components/commit/commit.css": ["components/commit/commit.less"],
-          "components/commitdiff/commitdiff.css": ["components/commitdiff/commitdiff.less"],
-          "components/graph/graph.css": ["components/graph/graph.less"],
-          "components/header/header.css": ["components/header/header.less"],
-          "components/home/home.css": ["components/home/home.less"],
-          "components/imagediff/imagediff.css": ["components/imagediff/imagediff.less"],
-          "components/repository/repository.css": ["components/repository/repository.less"],
-          "components/staging/staging.css": ["components/staging/staging.less"],
-          "components/stash/stash.css": ["components/stash/stash.less"],
-          "components/refreshbutton/refreshbutton.css": ["components/refreshbutton/refreshbutton.less"],
-        }
-      }
+      production: { files: lessFiles }
     },
     watch: {
       scripts: {
@@ -54,7 +45,7 @@ module.exports = (grunt) => {
           eol: 'lf'
         },
         files: {
-          './bin/ungit': ['./bin/ungit'],
+          './bin/mungit': ['./bin/mungit'],
           './bin/credentials-helper': ['./bin/credentials-helper']
         }
       },
@@ -63,7 +54,8 @@ module.exports = (grunt) => {
     mochaTest: {
       unit: {
         options: {
-          reporter: 'spec'
+          reporter: 'spec',
+          require: './test/spec.helper.js'
         },
         src: 'test/*.js'
       },
@@ -71,7 +63,8 @@ module.exports = (grunt) => {
         options: {
           reporter: 'spec',
           timeout: 15000,
-          bail: true
+          bail: true,
+          require: './test/spec.helper.js'
         },
         src: 'nmclicktests/spec.*.js'
       }
@@ -133,7 +126,10 @@ module.exports = (grunt) => {
             'ungit': true,
             'io': true,
             'keen': true,
-            'Raven': true
+            'Raven': true,
+            '$': true,
+            'jQuery': true,
+            'nprogress': true
           }
         },
         files: [
@@ -184,7 +180,11 @@ module.exports = (grunt) => {
         files: [
           // includes files within path
           { expand: true, flatten: true, src: ['node_modules/octicons/octicons/octicons.ttf'], dest: 'public/css/' },
-          { expand: true, flatten: true, src: ['node_modules/octicons/octicons/octicons.woff'], dest: 'public/css/' }
+          { expand: true, flatten: true, src: ['node_modules/octicons/octicons/octicons.woff'], dest: 'public/css/' },
+          { expand: true, flatten: true, src: ['node_modules/nprogress/nprogress.css'], dest: 'public/css/' },
+          { expand: true, flatten: true, src: ['node_modules/jquery-ui-bundle/jquery-ui.min.css'], dest: 'public/css/'},
+          { expand: true, flatten: true, src: ['node_modules/raven-js/dist/raven.min.js'], dest: 'public/js/' },
+          { expand: true, flatten: true, src: ['node_modules/raven-js/dist/raven.min.js.map'], dest: 'public/js/' }
         ]
       },
       electron: {
@@ -239,7 +239,8 @@ module.exports = (grunt) => {
     babel: {
       prod: {
         options: {
-          presets: ['@babel/preset-es2015', '@babel/preset-stage-0']
+          presets: ['@babel/preset-env'],
+          plugins: ['@babel/plugin-proposal-function-bind']
         },
         files: [{
             expand: true,
@@ -275,6 +276,7 @@ module.exports = (grunt) => {
     b.require('./public/source/components.js', { expose: 'ungit-components' });
     b.require('./public/source/program-events.js', { expose: 'ungit-program-events' });
     b.require('./public/source/navigation.js', { expose: 'ungit-navigation' });
+    b.require('./public/source/storage.js', { expose: 'ungit-storage' });
     b.require('./public/source/main.js', { expose: 'ungit-main' });
     b.require('./source/address-parser.js', { expose: 'ungit-address-parser' });
     b.require('knockout', { expose: 'knockout' });
@@ -293,6 +295,9 @@ module.exports = (grunt) => {
     b.require('just-detect-adblock', { expose: 'just-detect-adblock' });
     b.require('./node_modules/snapsvg/src/mina.js', { expose: 'mina' });
     b.require('octicons', { expose: 'octicons'});
+    b.require('nprogress', { expose: 'nprogress' });
+    b.require('jquery', { expose: 'jquery' });
+    b.require('dnd-page-scroll', { expose: 'dnd-page-scroll' });
     const outFile = fs.createWriteStream('./public/js/ungit.js');
     outFile.on('close', () => done());
     b.bundle().pipe(outFile);
@@ -314,6 +319,7 @@ module.exports = (grunt) => {
         b.external(['ungit-components',
                 'ungit-program-events',
                 'ungit-navigation',
+                'ungit-storage',
                 'ungit-main',
                 'ungit-address-parser',
                 'knockout',
@@ -365,7 +371,7 @@ module.exports = (grunt) => {
       const hash = stdout.trim();
       updatePackageJsonBuildVersion(hash);
       fs.writeFileSync('.npmrc', '//registry.npmjs.org/:_authToken=' + process.env.NPM_TOKEN);
-      childProcess.exec("npm publish", () => { done(); });
+      childProcess.exec("npm publish", (err) => { done(err); });
     });
   });
 
@@ -382,6 +388,12 @@ module.exports = (grunt) => {
     fs.readdirAsync('./nmclicktests')
       .then((files) => files.filter((file) => file.startsWith("spec.")))
       .then((tests) => {
+        const genericIndx = tests.indexOf("spec.generic.js")
+        if (genericIndx > -1) {
+          tests.splice(0, 0, tests.splice(genericIndx, 1)[0]);
+        }
+        return tests;
+      }).then((tests) => {
         grunt.log.writeln('Running click tests in parallel... (this will take a while...)');
         return Bluebird.map(tests, (file) => {
           let output = "";
@@ -426,8 +438,10 @@ module.exports = (grunt) => {
       const keys = Object.keys(tempPackageJson.dependencies).concat(Object.keys(tempPackageJson.devDependencies))
 
       const bumps = Bluebird.map(keys, (dep) => {
-        // Superagent 1.x has a new api, need to upgrade to that if we want to bump
-        if (dep == 'superagent') return
+        // winston 3.x has different API
+        if (dep == 'winston') return;
+        // babel 7.x.x has alot of changes.... :(
+        if (dep.indexOf('babel') > -1) return;
         // Octicon moved to SCSS instead of less
         if (dep == 'octicons') return;
 
@@ -464,7 +478,7 @@ module.exports = (grunt) => {
   grunt.loadNpmTasks('grunt-babel');
 
   // Default task, builds everything needed
-  grunt.registerTask('default', ['clean:babel', 'less:production', 'jshint', 'babel:prod', 'browserify-common', 'browserify-components', 'lineending:production', 'copy:main', 'imagemin:default']);
+  grunt.registerTask('default', ['clean:babel', 'less:production', 'jshint', 'babel:prod', 'copy:main', 'browserify-common', 'browserify-components', 'lineending:production', 'imagemin:default']);
 
   // Run tests without compile (use watcher or manually build)
   grunt.registerTask('unittest', ['mochaTest:unit']);

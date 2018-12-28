@@ -11,7 +11,7 @@
       </div>
 
       <div class="rightSideContainer" data-bind="style: { left: cx() + r() - 433 + 'px' }">
-        <!-- ko foreach: branches -->
+        <!-- ko foreach: branchesToDisplay -->
         <span class="ref branch" draggable="true" tabIndex="-1"
             data-bind="css: { current: current, remote: isRemoteBranch, dragging: isDragging, focused: selected },
               click: selected,
@@ -22,7 +22,7 @@
         </span>
         <!-- /ko -->
 
-        <!-- ko foreach: tags -->
+        <!-- ko foreach: tagsToDisplay -->
         <span class="ref tag" draggable="true" tabIndex="0"
             data-bind="css: { current: current, remote: isRemoteTag, dragging: isDragging, focused: selected },
               click: selected,
@@ -38,13 +38,12 @@
           <!-- ko if: icon --><span data-bind="html: icon" class="icon octicon"></span><!-- /ko -->
           <span data-bind="text: text"></span>
           <div class="dropmask" tabIndex="0" role="button" data-bind="dropOver: visible, drop: doPerform, dragEnter: dragEnter, dragLeave: dragLeave, click: doPerform"></div>
-          <!-- ko component: performProgressBar --><!-- /ko -->
         </span>
         <!-- /ko -->
 
         <!-- ko if: showNewRefAction -->
         <span class="newRef" data-bind="css: { editing: branchingFormVisible }">
-          <button class="showBranchingForm" data-bind="click: showBranchingForm, visible: !branchingFormVisible()">&#x271A;</button>
+          <button class="showBranchingForm bootstrap-tooltip" data-bind="click: showBranchingForm, visible: !branchingFormVisible()" data-toggle="tooltip" data-placement="bottom" title="Create a branch or tag"><span class="glyphicon glyphicon-plus"></span></button>
           <!-- ko if: branchingFormVisible -->
           <div class="form-inline">
             <input class="name form-control" type="text" data-bind="value: newBranchName, hasfocus: newBranchNameHasFocus, valueUpdate: 'afterkeydown'"/>
@@ -55,11 +54,19 @@
         </span>
         <!-- /ko -->
 
+        <!-- ko if: refs().length > 0 -->
+        <span class="newRef" data-bind="css: { editing: branchingFormVisible }">
+          <button class="showSearchForm octicon octicon-search bootstrap-tooltip" data-bind="click: showRefSearchForm, visible: !refSearchFormVisible()" data-toggle="tooltip" data-placement="bottom" title="Search for a branch or tag"></button>
+          <!-- ko if: refSearchFormVisible -->
+          <div class="form-inline">
+            <input class="name form-control" type="text" data-bind="hasfocus: refSearchFormVisible, valueUpdate: 'afterkeydown'"/>
+          </div>
+          <!-- /ko -->
+        </span>
+        <!-- /ko -->
+
       </div>
 
     </div>
-  </div>
-  <div class="graphFooter">
-    <!-- ko component: nodesLoader --><!-- /ko -->
   </div>
 </div>

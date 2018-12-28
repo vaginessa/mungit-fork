@@ -158,6 +158,20 @@
         padding: 0px;
         margin: 0px;
         margin-top: 9px;
+        -webkit-text-stroke-width: 1px;
+        color: rgba(255, 255, 255, 0.3);
+        &:hover {
+          color: rgba(255, 255, 255, 0.8);
+        }
+      }
+      .showSearchForm {
+        background: transparent;
+        border: 0px;
+        cursor: pointer;
+        padding: 0px;
+        margin: 0px;
+        margin-top: 9px;
+        -webkit-text-stroke-width: 1px;
         color: rgba(255, 255, 255, 0.3);
         &:hover {
           color: rgba(255, 255, 255, 0.8);
@@ -174,11 +188,6 @@
 
   .graphFooter {
     height: 60px;
-    .progressBar {
-      position: relative;
-      top: -150px;
-      margin-left: (@log-width-small);
-    }
   }
 
   .remote-icon {
@@ -200,5 +209,11 @@
     width: 5px;
     height: 10px;
     display: inline-block;
+  }
+}
+
+.ui-autocomplete {
+  .octicon {
+    float: right;
   }
 }

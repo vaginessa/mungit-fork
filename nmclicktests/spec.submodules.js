@@ -28,16 +28,15 @@ describe('[SUMBODULES]', () => {
   it('Submodule update', () => {
     return environment.nm.ug.click('.fetchButton .update-submodule')
       .wait(500)
-      .ug.waitForElementNotVisible('.progress');
+      .ug.waitForElementNotVisible('#nprogress');
   });
 
   it('Submodule delete check', () => {
     return environment.nm.click('.submodule .dropdown-toggle')
-      .wait('[data-ta-clickable="subrepo-remove"]')
       .ug.click('[data-ta-clickable="subrepo-remove"]')
       .wait('[data-ta-container="yes-no-dialog"]')
       .ug.click('.modal-dialog .btn-primary')
       .wait(500)
-      .ug.waitForElementNotVisible('.progress')
+      .ug.waitForElementNotVisible('#nprogress')
   });
 });

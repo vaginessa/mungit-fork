@@ -8,80 +8,72 @@ const _ = require('lodash');
 const isWindows = /^win/.test(process.platform);
 const Bluebird = require('bluebird');
 const fs = require('./utils/fs-async');
-const async = require('async');
 const gitConfigArguments = ['-c', 'color.ui=false', '-c', 'core.quotepath=false', '-c', 'core.pager=cat'];
-
-const gitQueue = async.queue((args, callback) => {
-  if (config.logGitCommands) winston.info(`git executing: ${args.repoPath} ${args.commands.join(' ')}`);
-  let rejected = false;
-  let stdout = '';
-  let stderr = '';
-  const gitProcess = child_process.spawn(
-    'git',
-    args.commands,
-    {
-      cwd: args.repoPath,
-      maxBuffer: 1024 * 1024 * 100,
-      timeout: args.timeout
-    });
-
-  if (args.outPipe) {
-    gitProcess.stdout.pipe(args.outPipe);
-  } else {
-    gitProcess.stdout.on('data', (data) => stdout += data.toString());
+const gitSem = require('locks').createSemaphore(config.maxConcurrentGitOperations);
+const gitOptionalLocks = config.isGitOptionalLocks ? '--no-optional-locks' : '';
+const gitBin = (() => {
+  if (config.gitBinPath) {
+    return (config.gitBinPath.endsWith('/') ? config.gitBinPath : config.gitBinPath + '/') + 'git';
   }
-  if (args.inPipe) {
-    gitProcess.stdin.end(args.inPipe);
-  }
-  gitProcess.stderr.on('data', (data) => stderr += data.toString());
-  gitProcess.on('error', (error) => {
-    if (args.outPipe) args.outPipe.end();
-    rejected = true;
-    callback(error);
-  });
+  return 'git';
+})();
 
-  gitProcess.on('close', (code) => {
-    if (config.logGitCommands) winston.info(`git result (first 400 bytes): ${args.commands.join(' ')}\n${stderr.slice(0, 400)}\n${stdout.slice(0, 400)}`);
-    if (rejected) return;
-    if (args.outPipe) args.outPipe.end();
+// only allows ${config.maxConcurrentGitOperations} count of parallel git operations
+const rateLimiter = () => new Bluebird((resolve) => { gitSem.wait(() => { resolve(); }); });
 
-    if (code === 0 || (code === 1 && args.allowError)) {
-      callback(null, stdout);
-    } else {
-      callback(getGitError(args, stderr, stdout));
-    }
-  });
-}, config.maxConcurrentGitOperations);
-
-const isRetryableError = function(err) {
-  if (!err) {
-    return false;
-  } else if (!err.error) {
-    return false;
-  } else if (err.error.indexOf("index.lock': File exists") > -1) {
-    // Dued to git operation parallelization it is possible that race condition may happen
-    return true;
-  } else if (err.error.indexOf("index file open failed: Permission denied") > -1) {
-    // TODO: Issue #796, based on the conversation with Appveyor team, I guess Windows system
-    // can report "Permission denied" for the file locking issue.
-    return true;
-  } else {
-    return false;
-  }
+const isRetryableError = (err) => {
+  const errMsg = ((err || {}).error || '');
+  // Dued to git operation parallelization it is possible that race condition may happen
+  if (errMsg.indexOf("index.lock': File exists") > -1) return true;
+  // TODO: Issue #796, based on the conversation with Appveyor team, I guess Windows system
+  // can report "Permission denied" for the file locking issue.
+  if (errMsg.indexOf("index file open failed: Permission denied") > -1) return true;
+  return false;
 }
 
 const gitExecutorProm = (args, retryCount) => {
-  return new Bluebird((resolve, reject) => {
-    gitQueue.push(args, (queueError, out) => {
-      if(queueError) {
-        reject(queueError);
+  return rateLimiter().then(() => {
+    return new Bluebird((resolve, reject) => {
+      if (config.logGitCommands) winston.info(`git executing: ${args.repoPath} ${args.commands.join(' ')}`);
+      let rejected = false;
+      let stdout = '';
+      let stderr = '';
+      const procOpts = { cwd: args.repoPath, maxBuffer: 1024 * 1024 * 100, timeout: args.timeout }
+      const gitProcess = child_process.spawn(gitBin, args.commands, procOpts);
+
+      if (args.outPipe) {
+        gitProcess.stdout.pipe(args.outPipe);
       } else {
-        resolve(out);
+        gitProcess.stdout.on('data', (data) => stdout += data.toString());
       }
+      if (args.inPipe) {
+        gitProcess.stdin.end(args.inPipe);
+      }
+      gitProcess.stderr.on('data', (data) => stderr += data.toString());
+      gitProcess.on('error', (error) => {
+        if (args.outPipe) args.outPipe.end();
+        rejected = true;
+        gitSem.signal();
+        reject(error);
+      });
+
+      gitProcess.on('close', (code) => {
+        if (config.logGitCommands) winston.info(`git result (first 400 bytes): ${args.commands.join(' ')}\n${stderr.slice(0, 400)}\n${stdout.slice(0, 400)}`);
+        if (rejected) return;
+        if (args.outPipe) args.outPipe.end();
+        gitSem.signal();
+
+        if (code === 0 || (code === 1 && args.allowError)) {
+          resolve(stdout);
+        } else {
+          reject(getGitError(args, stderr, stdout));
+        }
+      });
     });
   }).catch((err) => {
     if (retryCount > 0 && isRetryableError(err)) {
       return new Bluebird((resolve) => {
+        winston.warn(`retrying git commands after lock acquired fail. (If persists, lower 'maxConcurrentGitOperations')`);
         // sleep random amount between 250 ~ 750 ms
         setTimeout(resolve, Math.floor(Math.random() * (500) + 250));
       }).then(gitExecutorProm.bind(null, args, retryCount - 1));
@@ -135,34 +127,36 @@ const getGitError = (args, stderr, stdout) => {
   err.message = err.error.split('\n')[0];
   err.stderr = stderr;
   err.stdout = stdout;
-  if (stderr.indexOf('Not a git repository') >= 0) {
+  err.stdoutLower = (stdout || "").toLowerCase();
+  err.stderrLower = (stderr || "").toLowerCase();
+  if (err.stderrLower.indexOf('not a git repository') >= 0) {
     err.errorCode = 'not-a-repository';
-  } else if (err.stderr.indexOf('Connection timed out') != -1) {
+  } else if (err.stderrLower.indexOf('connection timed out') != -1) {
     err.errorCode = 'remote-timeout';
-  } else if (err.stderr.indexOf('Permission denied (publickey)') != -1) {
+  } else if (err.stderrLower.indexOf('permission denied (publickey)') != -1) {
     err.errorCode = 'permision-denied-publickey';
-  } else if (err.stderr.indexOf('ssh: connect to host') != -1 && err.stderr.indexOf('Bad file number') != -1) {
+  } else if (err.stderrLower.indexOf('ssh: connect to host') != -1 && err.stderrLower.indexOf('bad file number') != -1) {
     err.errorCode = 'ssh-bad-file-number';
-  } else if (err.stderr.indexOf('No remote configured to list refs from.') != -1) {
+  } else if (err.stderrLower.indexOf('no remote configured to list refs from.') != -1) {
     err.errorCode = 'no-remote-configured';
-  } else if ((err.stderr.indexOf('unable to access') != -1 && err.stderr.indexOf('Could not resolve host:') != -1) ||
-    (err.stderr.indexOf('Could not resolve hostname') != -1)) {
+  } else if ((err.stderrLower.indexOf('unable to access') != -1 && err.stderrLower.indexOf('could not resolve host:') != -1) ||
+    (err.stderrLower.indexOf('could not resolve hostname') != -1)) {
     err.errorCode = 'offline';
-  } else if (err.stderr.indexOf('Proxy Authentication Required') != -1) {
+  } else if (err.stderrLower.indexOf('proxy authentication required') != -1) {
     err.errorCode = 'proxy-authentication-required';
-  } else if (err.stderr.indexOf('Please tell me who you are') != -1) {
+  } else if (err.stderrLower.indexOf('please tell me who you are') != -1) {
     err.errorCode = 'no-git-name-email-configured';
-  } else if (err.stderr.indexOf('FATAL ERROR: Disconnected: No supported authentication methods available (server sent: publickey)') == 0) {
+  } else if (err.stderrLower.indexOf('fatal error: disconnected: no supported authentication methods available (server sent: publickey)') == 0) {
     err.errorCode = 'no-supported-authentication-provided';
-  } else if (stderr.indexOf('fatal: No remote repository specified.') == 0) {
+  } else if (err.stderrLower.indexOf('fatal: no remote repository specified.') == 0) {
     err.errorCode = 'no-remote-specified';
-  } else if (err.stderr.indexOf('non-fast-forward') != -1) {
+  } else if (err.stderrLower.indexOf('non-fast-forward') != -1) {
     err.errorCode = 'non-fast-forward';
-  } else if (err.stderr.indexOf('Failed to merge in the changes.') == 0 || err.stdout.indexOf('CONFLICT (content): Merge conflict in') != -1 || err.stderr.indexOf('after resolving the conflicts') != -1) {
+  } else if (err.stderrLower.indexOf('failed to merge in the changes.') == 0 || err.stdoutLower.indexOf('conflict (content): merge conflict in') != -1 || err.stderrLower.indexOf('after resolving the conflicts') != -1) {
     err.errorCode = 'merge-failed';
-  } else if (err.stderr.indexOf('This operation must be run in a work tree') != -1) {
+  } else if (err.stderrLower.indexOf('this operation must be run in a work tree') != -1) {
     err.errorCode = 'must-be-in-working-tree';
-  } else if (err.stderr.indexOf('Your local changes to the following files would be overwritten by checkout') != -1) {
+  } else if (err.stderrLower.indexOf('your local changes to the following files would be overwritten by checkout') != -1) {
     err.errorCode = 'local-changes-would-be-overwritten';
   }
 
@@ -171,11 +165,11 @@ const getGitError = (args, stderr, stdout) => {
 
 git.status = (repoPath, file) => {
   return Bluebird.props({
-    numStatsStaged: git(['diff', '--no-renames', '--numstat', '--cached', '--', (file || '')], repoPath)
+    numStatsStaged: git([gitOptionalLocks, 'diff', '--no-renames', '--numstat', '--cached', '--', (file || '')], repoPath)
       .then(gitParser.parseGitStatusNumstat),
-    numStatsUnstaged: git(['diff', '--no-renames', '--numstat', '--', (file || '')], repoPath)
+    numStatsUnstaged: git([gitOptionalLocks, 'diff', '--no-renames', '--numstat', '--', (file || '')], repoPath)
       .then(gitParser.parseGitStatusNumstat),
-    status: git(['status', '-s', '-b', '-u', (file || '')], repoPath)
+    status: git([gitOptionalLocks, 'status', '-s', '-b', '-u', (file || '')], repoPath)
       .then(gitParser.parseGitStatus)
       .then((status) => {
         return Bluebird.props({
@@ -304,17 +298,16 @@ git.diffFile = (repoPath, filename, sha1, ignoreWhiteSpace) => {
 }
 
 git.getCurrentBranch = (repoPath) => {
-  return git.revParse(repoPath).then(revResult => {
-    const HEADFile = path.join(revResult.gitRootPath, '.git', 'HEAD');
-    return fs.isExists(HEADFile).then(isExist => {
-      if (!isExist) throw { errorCode: 'not-a-repository', error: `No such file: ${HEADFile}` };
-    }).then(() => {
-      return fs.readFileAsync(HEADFile, { encoding: 'utf8' });
-    }).then(text => {
-      const rows = text.toString().split('\n');
-      return rows[0].slice('ref: refs/heads/'.length);
+  return git(['branch'], repoPath).then(gitParser.parseGitBranches)
+    .then((branches) => {
+      let branch = branches.find((branch) => branch.current);
+      if (branch) {
+        return branch.name;
+      }
+      else {
+        return "";
+      }
     });
-  });
 }
 
 git.discardAllChanges = (repoPath) => {
@@ -357,12 +350,12 @@ git.applyPatchedDiff = (repoPath, patchedDiff) => {
   }
 }
 
-git.commit = (repoPath, amend, message, files) => {
+git.commit = (repoPath, amend, emptyCommit, message, files) => {
   return (new Bluebird((resolve, reject) => {
     if (message == undefined) {
       reject({ error: 'Must specify commit message' });
     }
-    if ((!(Array.isArray(files)) || files.length == 0) && !amend) {
+    if ((!(Array.isArray(files)) || files.length == 0) && !amend && !emptyCommit) {
       reject({ error: 'Must specify files or amend to commit' });
     }
     resolve();
@@ -400,7 +393,10 @@ git.commit = (repoPath, amend, message, files) => {
 
     return Bluebird.join(commitPromiseChain, Bluebird.all(diffPatchPromises));
   }).then(() => {
-    return git(['commit', (amend ? '--amend' : ''), '--file=-'], repoPath, null, null, message);
+    const ammendFlag = (amend ? '--amend' : '');
+    const allowedEmptyFlag = ((emptyCommit ||amend) ? '--allow-empty' : '');
+    const isGPGSign = (config.isForceGPGSign ? '-S' : '');
+    return git(['commit', ammendFlag, allowedEmptyFlag, isGPGSign, '--file=-'], repoPath, null, null, message);
   }).catch((err) => {
     // ignore the case where nothing were added to be committed
     if (!err.stdout || err.stdout.indexOf("Changes not staged for commit") === -1) {
@@ -424,7 +420,7 @@ git.revParse = (repoPath) => {
 }
 
 git.log = (path, limit, skip, maxSearchIteration) => {
-  return git(['log', '--decorate=full', '--date=default', '--pretty=fuller', '--branches', '--tags', '--remotes', '--parents', '--no-notes', '--numstat', '--date-order', `--max-count=${limit}`, `--skip=${skip}`], path)
+  return git(['log', '--decorate=full', '--show-signature', '--date=default', '--pretty=fuller', '--branches', '--tags', '--remotes', '--parents', '--no-notes', '--numstat', '--date-order', `--max-count=${limit}`, `--skip=${skip}`], path)
     .then(gitParser.parseGitLog)
     .then((log) => {
       log = log ? log : [];

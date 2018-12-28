@@ -4,8 +4,23 @@ var programEvents = require('ungit-program-events');
 var _ = require('lodash');
 var Promise = require("bluebird");
 var rootPath = ungit.config && ungit.config.rootPath || '';
+var nprogress;
+if (ungit.config.isDisableProgressBar) {
+  nprogress = {
+    start: () => {},
+    done: () => {}
+  }
+} else {
+  nprogress = require('nprogress');
+  nprogress.configure({
+    trickleRate: 0.06,
+    trickleSpeed: 200,
+    showSpinner: false
+  });
+}
 
 function Server() {
+  this.isInternetConnected = true;
 }
 module.exports = Server;
 
@@ -33,10 +48,10 @@ Server.prototype.initSocket = function() {
   this.socket.on('git-directory-changed', function () {
     programEvents.dispatch({ event: 'git-directory-changed' });
   });
-  this.socket.on('request-credentials', function () {
+  this.socket.on('request-credentials', function (args) {
     self._getCredentials(function(credentials) {
       self.socket.emit('credentials', credentials);
-    });
+    }, args);
   });
 }
 Server.prototype._queryToString = function(query) {
@@ -85,9 +100,9 @@ Server.prototype._isConnected = function(callback) {
 Server.prototype._onDisconnect = function() {
   programEvents.dispatch({ event: 'disconnected' });
 }
-Server.prototype._getCredentials = function(callback) {
+Server.prototype._getCredentials = function(callback, args) {
   // Push out a program event, hoping someone will respond! (Which the app component will)
-  programEvents.dispatch({ event: 'request-credentials' });
+  programEvents.dispatch({ event: 'request-credentials', remote: args.remote });
   var credentialsBinding = programEvents.add(function(event) {
     if (event.event != 'request-credentials-response') return;
     credentialsBinding.detach();
@@ -107,6 +122,7 @@ Server.prototype.queryPromise = function(method, path, body) {
   if (method == 'GET' || method == 'DELETE') request.query = body;
   else request.body = body;
 
+  nprogress.start();
   return new Promise(function (resolve, reject) {
     self._httpJsonRequest(request, function(error, res) {
       if (error) {
@@ -140,7 +156,7 @@ Server.prototype.queryPromise = function(method, path, body) {
         resolve(res);
       }
     });
-  });
+  }).finally(() => nprogress.done(true));
 }
 Server.prototype.getPromise = function(url, arg) {
   return this.queryPromise('GET', url, arg);
@@ -151,17 +167,19 @@ Server.prototype.postPromise = function(url, arg) {
 Server.prototype.delPromise = function(url, arg) {
   return this.queryPromise('DELETE', url, arg);
 }
+Server.prototype.putPromise = function(url, arg) {
+  return this.queryPromise('put', url, arg);
+}
 Server.prototype.emptyPromise = function() {
   return Promise.resolve();
 }
 
-Promise.onPossiblyUnhandledRejection(function(err, promise) {
+Server.prototype.unhandledRejection = function(err) {
   // Show a error screen for git errors (so that people have a chance to debug them)
   if (err.res && err.res.body && err.res.body.isGitError) {
     if (ungit.config && ungit.config.sendUsageStatistics) {
       keen.addEvent('git-error', { version: ungit.version, userHash: ungit.userHash });
     }
-    console.log('git-error', err); // Used by the clicktests
     programEvents.dispatch({ event: 'git-error', data: {
       command: err.res.body.command,
       error: err.res.body.error,
@@ -171,8 +189,8 @@ Promise.onPossiblyUnhandledRejection(function(err, promise) {
     } });
   } else {
     // Everything else is handled as a pure error, using the precreated error (to get a better stacktrace)
-    console.error("Unhandled Promise ERROR: ", err, promise);
+    console.error("Unhandled Promise ERROR: ", err);
     programEvents.dispatch({ event: 'git-crash-error' });
-    Raven.captureException(promise.reason());
+    Raven.captureException(err);
   }
-});
+}

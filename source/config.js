@@ -4,9 +4,10 @@ const rc = require('rc');
 const path = require('path');
 const fs = require('fs');
 const yargs = require('yargs');
-const homedir = require('os-homedir')();
+const homedir = require('os').homedir();
 const winston = require('winston');
 const child_process = require('child_process');
+const semver = require('semver');
 
 const defaultConfig = {
 
@@ -135,11 +136,33 @@ const defaultConfig = {
   // A true value will use the default tool while a string value will use the tool of that specified name.
   mergeTool: false,
 
-  // Prefered default diff type used. Can be `"textdiff"` or `"sidebysidediff"`.
+  // Preferred default diff type used. Can be `"textdiff"` or `"sidebysidediff"`.
 	diffType: undefined,
+
+  // Number of refs to show on git commit bubbles to limit too many refs to appear.
+  numRefsToShow: 5,
+
+  // Force gpg sign for tags and commits.  (additionally one can set up `git config commit.gpgsign true`
+  // instead of this flag)  more on this: https://help.github.com/articles/signing-commits-using-gpg/
+  isForceGPGSign: false,
+
+  // Array of local git repo paths to display at the ungit home page
+  defaultRepositories: [],
+
+  // a string of ip to bind to, default is `127.0.0.1`
+  ungitBindIp: '127.0.0.1',
+
+  // is front end animation enabled
+  isAnimate: true,
+
+  // disable progress bar (front end api)
+  isDisableProgressBar: false,
+
+  // git binary path, not including git binary path. (i.e. /bin or /usr/bin/)
+  gitBinPath: null
 };
 
-// Works for now but should be moved to bin/ungit
+// Works for now but should be moved to bin/mungit
 let argv = yargs
 .usage('$0 [-v] [-b] [--cliconfigonly] [--gitVersionCheckOverride]')
 .example('$0 --port=8888', 'Run Ungit on port 8888')
@@ -151,8 +174,11 @@ let argv = yargs
 .alias('o', 'gitVersionCheckOverride')
 .alias('v', 'version')
 .describe('o', 'Ignore git version check and allow ungit to run with possibly lower versions of git')
+.boolean('o')
 .describe('ungitVersionCheckOverride', 'Ignore check for older version of ungit')
+.boolean('ungitVersionCheckOverride')
 .describe('b', 'Launch a browser window with ungit when the ungit server is started. --no-b or --no-launchBrowser disables this')
+.boolean('b')
 .describe('cliconfigonly', 'Ignore the default configuration points and only use parameters sent on the command line')
 .boolean('cliconfigonly')
 .describe('port', 'The port ungit is exposed on')
@@ -192,18 +218,27 @@ let argv = yargs
 .describe('numberOfNodesPerLoad', 'number of nodes to load for each git.log call')
 .describe('mergeTool', 'the git merge tool to use when resolving conflicts')
 .describe('diffType', 'Prefered default diff type used. Can be `"textdiff"` or `"sidebysidediff"`.')
+.describe('numRefsToShow', 'Number of refs to show on git commit bubbles to limit too many refs to appear.')
+.describe('isForceGPGSign', 'Force gpg sign for tags and commits.')
+.describe('defaultRepositories', 'Array of local git repo paths to display at the ungit home page')
+.describe('ungitBindIp', 'a string of ip to bind to, default is `127.0.0.1`')
+.describe('isAnimate', 'is front end animation enabled')
+.boolean('isAnimate')
+.describe('isDisableProgressBar', 'disable progress bar (front end api)')
+.boolean('isDisableProgressBar')
+.describe('gitBinPath', 'git binary path, not including git binary path. (i.e. /bin or /usr/bin/)')
 ;
 
-var argvConfig = argv.argv;
+const argvConfig = argv.argv;
 
 // For testing, $0 is grunt.  For credential-parser test, $0 is node
-// When ungit is started normaly, $0 == ungit, and non-hyphenated options exists, show help and exit.
+// When ungit is started normally, $0 == ungit, and non-hyphenated options exists, show help and exit.
 if (argvConfig.$0.indexOf('ungit') > -1 && argvConfig._ && argvConfig._.length > 0) {
   yargs.showHelp();
   process.exit(0);
 }
 
-var rcConfig = {};
+let rcConfig = {};
 if (!argvConfig.cliconfigonly) {
   try {
     rcConfig = rc('ungit');
@@ -266,3 +301,5 @@ if (fs.existsSync(path.join(__dirname, '..', '.git'))){
 } else {
   module.exports.ungitDevVersion = module.exports.ungitPackageVersion;
 }
+
+module.exports.isGitOptionalLocks = semver.satisfies(module.exports.gitVersion, '2.15.0');
