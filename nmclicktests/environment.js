@@ -284,7 +284,7 @@ class Environment {
     winston.info('Starting ungit server...', this.config.serverStartupOptions);
 
     this.hasStarted = false;
-    const options = ['bin/ungit',
+    const options = ['bin/mungit',
       '--cliconfigonly',
       `--port=${this.port}`,
       `--rootPath=${this.config.rootPath}`,

@@ -1,25 +1,27 @@
 {
   "name": "mungit",
-  "author": "Fredrik Norén <fredrik.jw.noren@gmail.com>",
+  "author": "Sten Feldman <exile@chamber.ee>",
   "contributors": [
+    "Fredrik Norén <fredrik.jw.noren@gmail.com>",
     "Sten Feldman <exile@chamber.ee> (http://sten.feldman.eesti.ee/)"
   ],
-  "description": "Git made easy",
+  "description": "Git made easy, a fork of ungit",
   "version": "1.2.4",
   "ungitPluginApiVersion": "0.2.0",
   "scripts": {
-    "start": "node ./bin/ungit",
+    "start": "node ./bin/mungit",
     "test": "grunt test",
     "build": "grunt",
-    "watch": "grunt watch"
+    "watch": "grunt watch",
+    "clean": "rm -rf src public/css public/images public/js; find ./components -name '*.bundle.js' | xargs rm; find ./components -name '*.css' | xargs rm"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/exsilium/mungit.git"
   },
   "bin": {
-    "ungit": "./bin/ungit",
-    "0ungit-credentials-helper": "./bin/credentials-helper"
+    "mungit": "./bin/mungit",
+    "0mungit-credentials-helper": "./bin/credentials-helper"
   },
   "dependencies": {
     "bluebird": "~3.5.2",

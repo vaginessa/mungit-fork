@@ -162,7 +162,7 @@ const defaultConfig = {
   gitBinPath: null
 };
 
-// Works for now but should be moved to bin/ungit
+// Works for now but should be moved to bin/mungit
 let argv = yargs
 .usage('$0 [-v] [-b] [--cliconfigonly] [--gitVersionCheckOverride]')
 .example('$0 --port=8888', 'Run Ungit on port 8888')

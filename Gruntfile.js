@@ -45,7 +45,7 @@ module.exports = (grunt) => {
           eol: 'lf'
         },
         files: {
-          './bin/ungit': ['./bin/ungit'],
+          './bin/mungit': ['./bin/mungit'],
           './bin/credentials-helper': ['./bin/credentials-helper']
         }
       },
@@ -477,7 +477,7 @@ module.exports = (grunt) => {
   grunt.loadNpmTasks('grunt-babel');
 
   // Default task, builds everything needed
-  grunt.registerTask('default', ['clean:babel', 'less:production', 'jshint', 'babel:prod', 'browserify-common', 'browserify-components', 'lineending:production', 'copy:main', 'imagemin:default']);
+  grunt.registerTask('default', ['clean:babel', 'less:production', 'jshint', 'babel:prod', 'copy:main', 'browserify-common', 'browserify-components', 'lineending:production', 'imagemin:default']);
 
   // Run tests without compile (use watcher or manually build)
   grunt.registerTask('unittest', ['mochaTest:unit']);
