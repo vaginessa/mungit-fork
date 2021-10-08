@@ -2,7 +2,7 @@ const config = require('./config');
 const cache = require('./utils/cache');
 const sysinfo = require('./sysinfo');
 const getmac = require('getmac');
-const winston = require('winston');
+const winston = require('./utils/winston');
 const keenio = require('keen-tracking');
 
 const _PROJECT_ID = '5a097593c9e77c0001099055';
@@ -32,7 +32,7 @@ class UsageStatistics {
     if (!config.sendUsageStatistics) return;
     this._mergeDataWithDefaultData(data, (data) => {
       winston.info(`Sending to keen.io: event ${JSON.stringify(data)}`);
-      this.keen.addEvent(event, data, callback);
+      this.keen.recordEvent(event, data, callback);
     });
   }
 }
