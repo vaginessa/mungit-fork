@@ -48,19 +48,7 @@
 <!-- ungit-plugins-placeholder -->
 
 <script type="text/javascript">
-	!function(name,path,ctx){
-    var latest,prev=name!=='Keen'&&window.Keen?window.Keen:false;ctx[name]=ctx[name]||{ready:function(fn){var h=document.getElementsByTagName('head')[0],s=document.createElement('script'),w=window,loaded;s.onload=s.onerror=s.onreadystatechange=function(){if((s.readyState&&!(/^c|loade/.test(s.readyState)))||loaded){return}s.onload=s.onreadystatechange=null;loaded=1;latest=w.Keen;if(prev){w.Keen=prev}else{try{delete w.Keen}catch(e){w.Keen=void 0}}ctx[name]=latest;ctx[name].ready(fn)};s.async=1;s.src=path;h.parentNode.insertBefore(s,h)}}
-  }('KeenAsync','https://d26b395fwzu5fz.cloudfront.net/keen-tracking-1.1.3.min.js',this);
-
-  KeenAsync.ready(function(){
-    // Configure a client instance
-    var keen = ungit.config.dev ? { addEvent: function() {} } : new KeenAsync({
-      projectId: '5a097593c9e77c0001099055',
-      writeKey: '60DB4CB04DEF91400BDEB9825D90407DEE4288E76EE59EA87EC4125FC7BCBD9DDC087DE9F6E910B3219EFF772F609F7D6F3CCCCC848DBB7C636136A484503D260BE723234D6D996859F4122297A62811F290CBA1D278D5B9062B57BAC92978EF'
-    });
-
 	  if (ungit.config.sendUsageStatistics) {
-
 		  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
 		  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
 		  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
@@ -69,15 +57,7 @@
 		  ga('create', 'UA-109725449-1', { 'cookieDomain': 'none' });
 		  ga('send', 'pageview');
 		  console.log('Google analytics inited');
-
-		  keen.addEvent('ui-start', { version: ungit.version, userHash: ungit.userHash });
-
-		  Raven.TraceKit.report.subscribe(function(err) {
-			  keen.addEvent('ui-exception', { version: ungit.version, userHash: ungit.userHash });
-		  });
-		  console.log('Keen.io inited');
-	  }
-	});
+	}
 
 	require('ungit-main').start();
 </script>

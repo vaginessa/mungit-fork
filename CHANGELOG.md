@@ -3,33 +3,112 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 Use the following format for additions: ` - VERSION: [feature/patch (if applicable)] Short description of change. Links to relevant issues/PRs.`
 
-- 1.2.4:
-  - Merging changes made in upstream v1.4.2..1.4.39, see the upstream CHANGELOG for details
-  - Numerous dependency pumps
-- 1.2.3:
-  - Allow authentication via repository url link using token parameter [#11](https://github.com/exsilium/mungit/issues/11)
-  - Issues and changelog links updated to new repo
-  - Dependencies updated
-- 1.2.2:
-  - Check version updates against mungit package, redirect users to mungit GitHub page for issues [#6](https://github.com/exsilium/mungit/issues/6)
-- 1.2.1:
-  - Octicons used as SVGs instead of WebFonts [#3](https://github.com/exsilium/mungit/issues/3)
-  - Keen.io and Google Analytics usage statistics update
-  - Sentry.io automatic bug reporting updated (git unhandled exceptions are now included)
-  - Fix for Node Security Advisory [#550](https://nodesecurity.io/advisories/550) in module ws
-  - Grunt-release; grunt-image-embed devDependency deprecation
-  - Dependency updates
+- 1.4.40: Remove Keen.io [#1180](https://github.com/FredrikNoren/ungit/pull/1180)
+- 1.4.39: Add git bin path config. [#1151](https://github.com/FredrikNoren/ungit/issues/1151)
+- 1.4.38: Fix: Highlight current branch in submodules
+- 1.4.37: Sort modules by names
+- 1.4.36: fix changing remotes in remotes dropdown [#1158](https://github.com/FredrikNoren/ungit/pull/1158)
+- 1.4.35:
+  - allow disabling of nprogress bar [#1143](https://github.com/FredrikNoren/ungit/issues/1143)
+  - set `ungitVersionCheckOverride` as boolean in config [#1102](https://github.com/FredrikNoren/ungit/issues/1102)
+- 1.4.34: fix issues when remote tags doesn't show [#1139](https://github.com/FredrikNoren/ungit/issues/1139)
+- 1.4.33:
+  - Bump getmac version [#1130](https://github.com/FredrikNoren/ungit/issues/1130)
+  - Add config to disable animation [#1136](https://github.com/FredrikNoren/ungit/issues/1136)
+  - dependency bumps
+  - Remove node6. Add node8 and node9 explicitly.
+- 1.4.32:
+  - Handle crashes with better logs
+  - Wrap localStorage to support environments without access to it
+- 1.4.31: Add error logging for npm publish
+- 1.4.30: Add `ungitBindIp` config to allow default binding in some cases [#1112](https://github.com/FredrikNoren/ungit/issues/1112)
+- 1.4.29:
+  - Add `--no-optional-locks` if git version is appropriate [#1105](https://github.com/FredrikNoren/ungit/issues/1105)
+  - Ensure ungit server to bind to `127.0.0.1` [#988](https://github.com/FredrikNoren/ungit/issues/988)
+  - Add node highlight on mouse hover on relationsip path [#1093](https://github.com/FredrikNoren/ungit/issues/1093)
+- 1.4.28: adding raven locally for offline access. [#1107](https://github.com/FredrikNoren/ungit/pull/1107)
+- 1.4.27: logic change for the merge conflict resolution
+- 1.4.26: add a way to preconfigure repo lists [#1106](https://github.com/FredrikNoren/ungit/issues/1106)
+- 1.4.25: add git pgp signing docs and code [#740](https://github.com/FredrikNoren/ungit/issues/740)
+- 1.4.24:
+  - change `/api/log` -> `/api/gitlog` as soem ad blockers really hates This
+  - Fix excessive error messaging when disconnected from internet
+  - Fix Raven initialization error when disconnected from internet
+- 1.4.23:
+  - add feature to do `--recurse-submodules` for git clone [#1080](https://www.gnupg.org/documentation/manpage.html
+  - increase debounce 250->500 wait and 1000->2000 sec so UI can pick up server changes more accurately
+- 1.4.22: Fix missing jQuery and jQuery UI references [#1086](https://github.com/FredrikNoren/ungit/issues/1086)
+- 1.4.21: Treat remote fetch fail as an warning rather than error [#1081](https://github.com/FredrikNoren/ungit/issues/1081)
+- 1.4.20:
+  - deleted checked in 3rd party codes and manage by npm.
+  - remove dependencies on async lib
+- 1.4.19:
+  - fix credential helper not fetching all the authentication data [#1078](https://github.com/FredrikNoren/ungit/pull/1078)
+- 1.4.18:
+  - fix inaccurate git state issue when new branch name conflict and `autoCheckoutOnBranchCreate` is enabled.
+  - Add content refresh on .gitignore file change
+  - fix reference filtering
+- 1.4.17: fix textarea with in dialog when editing .gitignore [#1068](https://github.com/FredrikNoren/ungit/pull/1068)
+- 1.4.16: Move version number to below logo. [#1069](https://github.com/FredrikNoren/ungit/pull/1069)
+- 1.4.15: fix not setting `pathToNavigateTo` properly when `launchBrowser` is false and `launchCommand` is set [#1065](https://github.com/FredrikNoren/ungit/issues/1065)
+- 1.4.14: fix credential helper when ungit is used with rootpath [#1060](https://github.com/FredrikNoren/ungit/issues/1060)
+- 1.4.13:
+  - Change raven web client source to CDN rather than local copy [#972](https://github.com/FredrikNoren/ungit/issues/972)
+  - dependency bump
+- 1.4.12:
+  - Adding internet disconnected state handling [#1014](https://github.com/FredrikNoren/ungit/issues/1014)
+  - Allow editing .gitignore via ungit [#976](https://github.com/FredrikNoren/ungit/issues/1014)
+- 1.4.11:
+  - differentiate remote vs local tag. [#1016](https://github.com/FredrikNoren/ungit/issues/1016)
+  - fix push not throwing giterror
+  - fix remote tag push not creating remote tag
+  - change ref refresh logic
+  - show error on incorrect credentials [#1042](https://github.com/FredrikNoren/ungit/pull/1042)
+  - allow credential handling for remotes [#1039](https://github.com/FredrikNoren/ungit/issues/1039)
+  - add cancel button for empty commits and amends [#1029](https://github.com/FredrikNoren/ungit/issues/1029)
+  - cleanup clicktest output [#1035](https://github.com/FredrikNoren/ungit/pull/1035)
+- 1.4.10:
+  - hide / disable push option if there is no remote [#1050](https://github.com/FredrikNoren/ungit/issues/1050)
+  - add commit & push option [#1038](https://github.com/FredrikNoren/ungit/issues/1038)
+- 1.4.9:
+  - handle failed promises [#1017](https://github.com/FredrikNoren/ungit/issues/1017)
+  - empty commit [#1028](https://github.com/FredrikNoren/ungit/issues/1028)
+  - fix commit detail layout while hovering over commit node [#1025](https://github.com/FredrikNoren/ungit/issues/1025)
+- 1.4.8: fix remote branches display name and delete action [#1032](https://github.com/FredrikNoren/ungit/issues/1032), [#1031](https://github.com/FredrikNoren/ungit/issues/1031)
+- 1.4.7: add remote branches to the branch list. [#966](https://github.com/FredrikNoren/ungit/issues/966)
+- 1.4.6:
+  - dependency bump to fix dependency's security problem.
+  - Add emphasis if remote branch delete for confirmation dialog. [#947](https://github.com/FredrikNoren/ungit/issues/947)
+- 1.4.5: fix a bug where no diff wasn't properly showing [#969](https://github.com/FredrikNoren/ungit/issues/969)
+- 1.4.4:
+  - fix a bug where fetch is disabled after page load
+  - make `forceLaunchPath` to supersede `launchBrowser` [#1006](https://github.com/FredrikNoren/ungit/issues/1006)
+- 1.4.3: changing to path navigation to `nprogress` bar. [#1001](https://github.com/FredrikNoren/ungit/issues/1001)
+- 1.4.2:
+  - fix navigation redirection on git clone and adding xkcd image
+  - dependency bump
+- 1.4.1:
+  - fix the issue where browser opens before ungit start. [#994](https://github.com/FredrikNoren/ungit/issues/994)
+  - including xkcd art back [#999](https://github.com/FredrikNoren/ungit/issues/999)
+- 1.4.0: Revert to MIT [#947](https://github.com/FredrikNoren/ungit/issues/974)
+- 1.3.3: fix `tagsToDisplay` clearing issue. [#973](https://github.com/FredrikNoren/ungit/issues/973)
+- 1.3.2: Adding in ref search box and limit num of ref display [#973](https://github.com/FredrikNoren/ungit/issues/973)
+- 1.3.1: Add link to plans & license in header [#947](https://github.com/FredrikNoren/ungit/issues/974)
+- 1.3.0: Switch to Faircode paywall instead of license popup [#947](https://github.com/FredrikNoren/ungit/issues/974)
+- 1.2.3: Bump license text to v0.2.1 (fixes typo). [Faircode License changelog](https://github.com/faircodeio/faircode-license/blob/master/CHANGELOG.md)
+- 1.2.2: Bump license text to v0.2 to fix two small inconsistencies: Clarify currency (USD) and remove "no additional rights" clause as it's problematic and superfluous. License changelog at https://github.com/faircodeio/faircode-license/blob/master/CHANGELOG.md [#947](https://github.com/FredrikNoren/ungit/issues/974)
+- 1.2.1: fix for not launching browser when executed at the git repo [#986](https://github.com/FredrikNoren/ungit/issues/986)
 - 1.2.0:
-  - Mungit fork. Reason, upstream licensing change [#974](https://github.com/FredrikNoren/ungit/issues/974)
-  - Improvements to narrow space alignment and moving the toolbar up [#2](https://github.com/exsilium/mungit/issues/1)
-  - Grey coloring scheme introduced to differentiate from original and to align better with Cloud9v2 coloring [#1](https://github.com/exsilium/mungit/issues/1)
-  - First release to npm and synch up with tagging releases in Github
-  
-# Pre-fork
-  
-- 1.1.31:
-  - Bump dependencies
+  - Show license notification on first start (license changed in 1.1.32) [#947](https://github.com/FredrikNoren/ungit/issues/974)
+  - fix potential memory leak with `express-session`[#977](https://github.com/FredrikNoren/ungit/issues/977)
+  - Fix document title on windows [#983](https://github.com/FredrikNoren/ungit/pull/983)
+  - parse local storage as json instead of regex [#981](https://github.com/FredrikNoren/ungit/pull/981)
+  - resolve path keywords such as `~` at server side [#980](https://github.com/FredrikNoren/ungit/issues/975)
+- 1.1.33:
+  - Make Logo and favicon HiDpi [#589](https://github.com/FredrikNoren/ungit/issues/589)
   - Remove forever-monitor [#961](https://github.com/FredrikNoren/ungit/issues/961)
+- 1.1.32: Update license [#974](https://github.com/FredrikNoren/ungit/issues/974)
+- 1.1.31: Bump dependencies
 - 1.1.30:
   - move unit tests to es6
   - Add squash feature [#129](https://github.com/FredrikNoren/ungit/issues/129)

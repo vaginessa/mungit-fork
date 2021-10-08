@@ -4,7 +4,6 @@ const gitParser = require('./git-parser');
 const winston = require('winston');
 const BugTracker = require('./bugtracker');
 const bugtracker = new BugTracker('server');
-const usageStatistics = require('./usage-statistics');
 const os = require('os');
 const mkdirp = require('mkdirp');
 const rimraf = require('rimraf');
@@ -55,11 +54,6 @@ exports.registerApi = (env) => {
               promises.push(watchPath(socket, path.join('.git', 'refs', 'tags')));
               return Bluebird.all(promises);
             }
-          }).catch((err) => {
-            // Sometimes fs.watch crashes with errors such as ENOSPC (no space available)
-            // which is pretty weird, but hard to do anything about, so we just log them here.
-            usageStatistics.addEvent('fs-watch-exception');
-            return null;
           }).finally(callback);
       });
     });
