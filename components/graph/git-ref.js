@@ -1,10 +1,10 @@
 const ko = require('knockout');
 const md5 = require('blueimp-md5');
-const Selectable = require('./selectable');
+const promise = require('bluebird');
+const octicons = require('octicons');
 const programEvents = require('ungit-program-events');
 const components = require('ungit-components');
-const promise = require('bluebird');
-const octicon = require('octicons');
+const Selectable = require('./selectable');
 
 class RefViewModel extends Selectable {
   constructor(fullRefName, graph) {
@@ -41,7 +41,7 @@ class RefViewModel extends Selectable {
     if (this.isRemoteTag) {
       this.localRefName = this.name.slice('remote-tag: '.length);
     }
-    const splitedName = this.localRefName.split('/')
+    const splitedName = this.localRefName.split('/');
     if (this.isRemote) {
       // get rid of the origin/ part of origin/branchname
       this.remote = splitedName[0];
@@ -55,42 +55,29 @@ class RefViewModel extends Selectable {
 
     this.node.subscribe(oldNode => {
       if (oldNode) oldNode.removeRef(this);
-    }, null, "beforeChange");
+    }, null, 'beforeChange');
     this.node.subscribe(newNode => {
       if (newNode) newNode.pushRef(this);
     });
 
-    this.branchIcon = ko.computed(() => {
-      if(this.isLocalBranch && this.graph.checkedOutBranch() == this.refName) {
-        return octicon['git-branch'].toSVG({ "height": 28 });
-      }
-      else {
-        return octicon['git-branch'].toSVG({ "height": 20 });
-      }
-    });
-
-    this.remoteIcon = octicon.broadcast.toSVG({ "height": 20 });
-    this.globeIcon = octicon.globe.toSVG({ "height": 20 });
-    this.tagIcon = octicon.tag.toSVG({ "height": 20 });
-
     // This optimization is for autocomplete display
-    this.value = splitedName[splitedName.length - 1]
-    this.label = this.localRefName
-    this.dom = `${this.localRefName}<span class='octicon ${this.isTag ? 'octicon-tag' : 'octicon-git-branch'}'></span>`
-    this.displayName = ko.computed(() => {
+    this.value = splitedName[splitedName.length - 1];
+    this.label = this.localRefName;
+    this.dom = `${this.localRefName}<span>${octicons[(this.isTag ? 'tag': 'git-branch')].toSVG({ 'height': 18 })}</span>`;
+
+    this.displayHtml = (largeCurrent) => {
+      const size = (largeCurrent && this.current()) ? 26 : 18;
       let prefix = '';
       if (this.isRemote) {
-        prefix = '<span class="octicon octicon-broadcast"></span> ';
+        prefix = `<span>${octicons.globe.toSVG({ 'height': size })}</span> `;
       }
       if (this.isBranch) {
-        prefix += '<span class="octicon octicon-git-branch"></span> ';
-      } else if (this.current()) {
-        prefix += '<span class="octicon octicon-chevron-right"></span> ';
+        prefix += `<span>${octicons['git-branch'].toSVG({ 'height': size })}</span> `;
       } else if (this.isTag) {
-        prefix += '<span class="octicon octicon-tag"></span> ';
+        prefix += `<span>${octicons.tag.toSVG({ 'height': size })}</span> `;
       }
       return prefix + this.localRefName;
-    });
+    };
   }
 
   _colorFromHashOfString(string) {

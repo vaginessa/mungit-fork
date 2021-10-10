@@ -11,9 +11,12 @@
   "scripts": {
     "start": "node ./bin/mungit",
     "test": "grunt test",
+    "unittest": "grunt unittest",
     "build": "grunt",
     "watch": "grunt watch",
     "clean": "rm -rf src public/css public/images public/js; find ./components -name '*.bundle.js' | xargs rm; find ./components -name '*.css' | xargs rm"
+    "travisnpmpublish": "grunt travisnpmpublish",
+    "electronpublish": "grunt electronpublish"
   },
   "repository": {
     "type": "git",
@@ -24,6 +27,7 @@
     "0mungit-credentials-helper": "./bin/credentials-helper"
   },
   "dependencies": {
+    "@primer/octicons": "^9.2.0",
     "bluebird": "~3.5.4",
     "blueimp-md5": "~2.10.0",
     "body-parser": "~1.19.0",
@@ -48,11 +52,11 @@
     "mkdirp": "~0.5.1",
     "moment": "~2.24.0",
     "node-cache": "~4.2.0",
-    "npm": "~6.9.1-next.0",
+    "npm": "~6.12.1",
     "npm-registry-client": "~8.6.0",
     "nprogress": "^0.2.0",
     "octicons": "~8.2.0",
-    "opn": "~6.1.0",
+    "open": "~6.1.0",
     "passport": "~0.4.0",
     "passport-local": "~1.0.0",
     "jsonwebtoken": "~8.4.0",
@@ -76,8 +80,8 @@
     "@babel/preset-env": "~7.2.3",
     "@babel/plugin-proposal-function-bind": "~7.2.0",
     "browserify": "~16.2.3",
-    "electron": "5.0.0",
-    "electron-packager": "~13.1.1",
+    "electron": "~7.0.0",
+    "electron-packager": "~14.1.0",
     "expect.js": "~0.3.1",
     "extract-zip": "~1.6.7",
     "grunt": "~1.0.4",

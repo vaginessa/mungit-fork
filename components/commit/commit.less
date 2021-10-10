@@ -1,25 +1,20 @@
-
 @import "public/less/variables.less";
 
 .commit {
   position: relative;
-  .octicon-key {
-    color: #428bca;
-    margin-left: 5px;
-  }
 
   &.highlighted {
     z-index: 2;
     .commit-box {
       box-shadow: 5px 5px 0px rgba(0, 0, 0, 0.2);
-      background: #595959;
+      background: #4B5766;
       left: -5px;
       .arrowRight {
         .shadow {
           display: block;
         }
         .arrow {
-          border-left: 15px solid #595959;
+          border-left: 15px solid #4A5665;
         }
       }
     }
@@ -30,6 +25,7 @@
   &.selected {
     .details {
       .diff-wrapper {
+        margin-bottom: 5px;
         transition:width 0.1s, left 0.05s;
         box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.15);
         .diff-inner {
@@ -38,9 +34,7 @@
           padding-top: 0px;
         }
         .btn-group {
-          padding: 2px;
-          margin: 10px 0px 0px 10px;
-          margin-bottom: 0px;
+          margin-top: 10px;
         }
       }
     }
@@ -58,14 +52,14 @@
         margin-left: -1px;
         border-top: 15px solid transparent;
         border-bottom: 15px solid transparent;
-        border-left: 15px solid #1b1b1b;
+        border-left: 15px solid #1E2029;
       }
       .arrow {
         height: 0px;
         width: 0px;
         border-top: 15px solid transparent;
         border-bottom: 15px solid transparent;
-        border-left: 15px solid #4d4d4d;
+        border-left: 15px solid #3b4552;
       }
     }
   }
@@ -92,13 +86,11 @@
       .body {
         white-space: pre-wrap;
         word-wrap: break-word;
-        color: #9A9A9A;
+        color: #8F9FA6;
       }
       .diff-wrapper {
-        margin: 0px;
         margin-top: 10px;
-        margin-bottom: 10px;
-        background: #595959;
+        background: #4B5766;
         border-radius: 3px;
       }
     }
