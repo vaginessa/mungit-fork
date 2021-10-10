@@ -8,6 +8,7 @@ const _ = require('lodash');
 const isWindows = /^win/.test(process.platform);
 const Bluebird = require('bluebird');
 const fs = require('./utils/fs-async');
+const gitEmptyReproSha1 = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'; // https://stackoverflow.com/q/9765453
 const gitConfigArguments = ['-c', 'color.ui=false', '-c', 'core.quotepath=false', '-c', 'core.pager=cat'];
 const gitSem = require('locks').createSemaphore(config.maxConcurrentGitOperations);
 const gitOptionalLocks = config.isGitOptionalLocks ? '--no-optional-locks' : '';
@@ -176,17 +177,17 @@ const getGitError = (args, stderr, stdout) => {
 
 git.status = (repoPath, file) => {
   return Bluebird.props({
-    numStatsStaged: git([gitOptionalLocks, 'diff', '--no-renames', '--numstat', '--cached', '--', (file || '')], repoPath)
+    numStatsStaged: git([gitOptionalLocks, 'diff', '--numstat', '--cached', '-z', '--', (file || '')], repoPath)
       .then(gitParser.parseGitStatusNumstat),
     numStatsUnstaged: Bluebird.resolve().then(() => {
       if (config.isEnableNumStat) {
-        return git([gitOptionalLocks, 'diff', '--no-renames', '--numstat', '--', (file || '')], repoPath)
+        return git([gitOptionalLocks, 'diff', '--numstat', '-z', '--', (file || '')], repoPath)
           .then(gitParser.parseGitStatusNumstat);
       } else {
         return {}
       }
     }),
-    status: git([gitOptionalLocks, 'status', '-s', '-b', '-u', (file || '')], repoPath)
+    status: git([gitOptionalLocks, 'status', '-s', '-b', '-u', '-z', (file || '')], repoPath)
       .then(gitParser.parseGitStatus)
       .then((status) => {
         return Bluebird.props({
@@ -281,14 +282,23 @@ git.binaryFileContent = (repoPath, filename, version, outPipe) => {
   return git(['show', `${version}:${filename}`], repoPath, null, outPipe);
 }
 
-git.diffFile = (repoPath, filename, sha1, ignoreWhiteSpace) => {
-  const newFileDiffArgs = ['diff', '--no-index', isWindows ? 'NUL' : '/dev/null', filename.trim()];
+git.diffFile = (repoPath, filename, oldFilename, sha1, ignoreWhiteSpace) => {
+  if (sha1) {
+    return git(['rev-list', '--max-parents=0', sha1], repoPath).then((initialCommitSha1) => {
+      let prevSha1 = sha1 == initialCommitSha1.trim() ? gitEmptyReproSha1 : `${sha1}^`;
+      if (oldFilename && oldFilename !== filename) {
+        return git(['diff', ignoreWhiteSpace ? '-w' : '', `${prevSha1}:${oldFilename.trim()}`, `${sha1}:${filename.trim()}`], repoPath);
+      } else {
+        return git(['diff', ignoreWhiteSpace ? '-w' : '', prevSha1, sha1, "--", filename.trim()], repoPath);
+      }
+    });
+  }
+
   return git.revParse(repoPath)
     .then((revParse) => { return revParse.type === 'bare' ? { files: {} } : git.status(repoPath) }) // if bare do not call status
     .then((status) => {
       const file = status.files[filename];
-
-      if (!file && !sha1) {
+      if (!file) {
         return fs.isExists(path.join(repoPath, filename))
           .then((isExist) => {
             if (isExist) return [];
@@ -296,20 +306,13 @@ git.diffFile = (repoPath, filename, sha1, ignoreWhiteSpace) => {
           });
         // If the file is new or if it's a directory, i.e. a submodule
       } else {
-        let exec;
         if (file && file.isNew) {
-          exec = git(newFileDiffArgs, repoPath, true);
-        } else if (sha1) {
-          exec = git(['diff', ignoreWhiteSpace ? '-w' : '', `${sha1}^`, sha1, "--", filename.trim()], repoPath);
+          return git(['diff', '--no-index', isWindows ? 'NUL' : '/dev/null', filename.trim()], repoPath, true);
+        } else if (file && file.renamed) {
+          return git(['diff', ignoreWhiteSpace ? '-w' : '', `HEAD:${oldFilename}`, filename.trim()], repoPath);
         } else {
-          exec = git(['diff', ignoreWhiteSpace ? '-w' : '', 'HEAD', '--', filename.trim()], repoPath);
+          return git(['diff', ignoreWhiteSpace ? '-w' : '', 'HEAD', '--', filename.trim()], repoPath);
         }
-        return exec.catch((err) => {
-          // when <rev> is very first commit and 'diff <rev>~1:[file] <rev>:[file]' is performed,
-          // it will error out with invalid object name error
-          if (sha1 && err && err.error.indexOf('bad revision') > -1)
-            return git(newFileDiffArgs, repoPath, true);
-        });
       }
     });
 }
@@ -423,21 +426,24 @@ git.commit = (repoPath, amend, emptyCommit, message, files) => {
 }
 
 git.revParse = (repoPath) => {
-  return git(['rev-parse', '--is-inside-work-tree', '--is-bare-repository', '--show-toplevel'], repoPath)
+  return git(['rev-parse', '--is-inside-work-tree', '--is-bare-repository'], repoPath)
     .then((result) => {
-      const resultLines = result.toString().split('\n');
-      const rootPath = path.normalize(resultLines[2] ? resultLines[2] : repoPath);
-      if (resultLines[0].indexOf('true') > -1) {
-        return { type: 'inited', gitRootPath: rootPath };
-      } else if (resultLines[1].indexOf('true') > -1) {
-        return { type: 'bare', gitRootPath: rootPath };
+      const resultLines = result.split('\n');
+      if (resultLines[1].indexOf('true') > -1) { // bare repositories don't support `--show-toplevel` since git 2.25
+        return { type: 'bare', gitRootPath: repoPath };
       }
-      return { type: 'uninited', gitRootPath: rootPath };
+      return git(['rev-parse', '--show-toplevel'], repoPath).then((topLevel) => {
+        const rootPath = path.normalize(topLevel.trim() ? topLevel.trim() : repoPath);
+        if (resultLines[0].indexOf('true') > -1) {
+            return { type: 'inited', gitRootPath: rootPath };
+        }
+        return { type: 'uninited', gitRootPath: rootPath };
+      });
     }).catch((err) => ({ type: 'uninited', gitRootPath: path.normalize(repoPath) }));
 }
 
 git.log = (path, limit, skip, maxActiveBranchSearchIteration) => {
-  return git(['log', '--cc', '--decorate=full', '--show-signature', '--date=default', '--pretty=fuller', '--branches', '--tags', '--remotes', '--parents', '--no-notes', '--numstat', '--date-order', `--max-count=${limit}`, `--skip=${skip}`], path)
+  return git(['log', '--cc', '--decorate=full', '--show-signature', '--date=default', '--pretty=fuller', '-z', '--branches', '--tags', '--remotes', '--parents', '--no-notes', '--numstat', '--date-order', `--max-count=${limit}`, `--skip=${skip}`], path)
     .then(gitParser.parseGitLog)
     .then((log) => {
       log = log ? log : [];

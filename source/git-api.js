@@ -12,7 +12,6 @@ const gitPromise = require('./git-promise');
 const fs = require('./utils/fs-async');
 const ignore = require('ignore');
 const Bluebird = require('bluebird');
-const crypto = require('crypto');
 
 const isMac = /^darwin/.test(process.platform);
 const isWindows = /^win/.test(process.platform);
@@ -74,7 +73,8 @@ exports.registerApi = (env) => {
           });
         }
       }).then(() => {
-        socket.watcher.push(fs.watch(pathToWatch, options || {}, (event, filename) => {
+        const watcher = fs.watch(pathToWatch, options || {});
+        watcher.on('change', (event, filename) => {
           if (!filename) return;
           const filePath = path.join(subfolderPath, filename);
           winston.debug(`File change: ${filePath}`);
@@ -83,7 +83,11 @@ exports.registerApi = (env) => {
             emitGitDirectoryChanged(socket.watcherPath);
             emitWorkingTreeChanged(socket.watcherPath);
           }
-        }));
+        });
+        watcher.on('error', (err) => {
+          winston.warn(`Error watching ${pathToWatch}: `, JSON.stringify(err));
+        });
+        socket.watcher.push(watcher);
       });
   };
 
@@ -259,7 +263,7 @@ exports.registerApi = (env) => {
 
   app.get(`${exports.pathPrefix}/diff`, ensureAuthenticated, ensurePathExists, (req, res) => {
     const isIgnoreWhiteSpace = req.query.whiteSpace === "true" ? true : false;
-    jsonResultOrFailProm(res, gitPromise.diffFile(req.query.path, req.query.file, req.query.sha1, isIgnoreWhiteSpace));
+    jsonResultOrFailProm(res, gitPromise.diffFile(req.query.path, req.query.file, req.query.oldFile, req.query.sha1, isIgnoreWhiteSpace));
   });
 
   app.get(`${exports.pathPrefix}/diff/image`, ensureAuthenticated, ensurePathExists, (req, res) => {
@@ -326,11 +330,11 @@ exports.registerApi = (env) => {
   });
 
   app.get(`${exports.pathPrefix}/show`, ensureAuthenticated, (req, res) => {
-    jsonResultOrFailProm(res, gitPromise(['show', '--numstat', req.query.sha1], req.query.path).then(gitParser.parseGitLog));
+    jsonResultOrFailProm(res, gitPromise(['show', '--numstat', '-z', req.query.sha1], req.query.path).then(gitParser.parseGitLog));
   });
 
   app.get(`${exports.pathPrefix}/head`, ensureAuthenticated, ensurePathExists, (req, res) => {
-    const task = gitPromise(['log', '--decorate=full', '--pretty=fuller', '--parents', '--max-count=1'], req.query.path)
+    const task = gitPromise(['log', '--decorate=full', '--pretty=fuller', '-z', '--parents', '--max-count=1'], req.query.path)
       .then(gitParser.parseGitLog)
       .catch((err) => {
         if (err.stderr.indexOf('fatal: bad default revision \'HEAD\'') == 0)
@@ -559,7 +563,7 @@ exports.registerApi = (env) => {
       .then((baseRepoPath) => {
         return { path: path.resolve(baseRepoPath.trim()) };
       }).catch((e) => {
-        if (e.errorCode === 'not-a-repository') {
+        if (e.errorCode === 'not-a-repository' || e.errorCode === 'must-be-in-working-tree') { // not a repository or a bare repository
           return {};
         }
         throw e;
@@ -613,7 +617,7 @@ exports.registerApi = (env) => {
   });
 
   app.get(`${exports.pathPrefix}/stashes`, ensureAuthenticated, ensurePathExists, (req, res) => {
-    const task = gitPromise(['stash', 'list', '--decorate=full', '--pretty=fuller', '--parents', '--numstat'], req.query.path)
+    const task = gitPromise(['stash', 'list', '--decorate=full', '--pretty=fuller', '-z', '--parents', '--numstat'], req.query.path)
       .then(gitParser.parseGitLog);
     jsonResultOrFailProm(res, task);
   });
@@ -720,13 +724,11 @@ exports.registerApi = (env) => {
     app.post(`${exports.pathPrefix}/testing/git`, ensureAuthenticated, (req, res) => {
       jsonResultOrFailProm(res, gitPromise(req.body.command, req.body.repo))
     });
-    app.post(`${exports.pathPrefix}/testing/cleanup`, ensureAuthenticated, (req, res) => {
-      //winston.info('Cleaned up: ' + JSON.stringify(cleaned));
-      res.json({ result: temp.cleanup() });
-    });
-    app.post(`${exports.pathPrefix}/testing/shutdown`, ensureAuthenticated, (req, res) => {
-      res.json({});
-      process.exit();
+    app.post(`${exports.pathPrefix}/testing/cleanup`, (req, res) => {
+      temp.cleanup((err, cleaned) => {
+        winston.info('Cleaned up: ' + JSON.stringify(cleaned));
+        res.json({ result: cleaned });
+      });
     });
   }
 };

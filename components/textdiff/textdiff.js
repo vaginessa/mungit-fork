@@ -62,6 +62,7 @@ class WhiteSpace {
 class TextDiffViewModel {
   constructor(args) {
     this.filename = args.filename;
+    this.oldFilename = args.oldFilename
     this.repoPath = args.repoPath;
     this.server = args.server;
     this.sha1 = args.sha1;
@@ -99,6 +100,7 @@ class TextDiffViewModel {
   getDiffArguments() {
     return {
       file: this.filename,
+      oldFile: this.oldFilename,
       path: this.repoPath(),
       sha1: this.sha1 ? this.sha1 : '',
       whiteSpace: this.whiteSpace.value()
@@ -153,7 +155,7 @@ class TextDiffViewModel {
 
       let html;
 
-      if (this.textDiffType.value() === 'sidebysidediff') {
+      if (this.textDiffType.value() === sideBySideDiff) {
         html = diff2html.getPrettySideBySideHtmlFromJson(this.diffJson);
       } else {
         html = diff2html.getPrettyHtmlFromJson(this.diffJson);

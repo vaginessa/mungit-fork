@@ -5,7 +5,6 @@ const express = require('express');
 const path = require('path');
 const restGit = require('../source/git-api');
 const common = require('./common-es6.js');
-const wrapErrorHandler = common.wrapErrorHandler;
 
 const app = express();
 app.use(require('body-parser').json());
@@ -84,6 +83,8 @@ describe('git-api submodule', function () {
         expect(Object.keys(res.files).length).to.be(1);
         expect(res.files[submodulePath]).to.eql({
           displayName: submodulePath,
+          fileName: submodulePath,
+          oldFileName: submodulePath,
           isNew: false,
           staged: false,
           removed: false,

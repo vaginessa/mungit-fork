@@ -3,8 +3,20 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 We are following the [Keep a Changelog](https://keepachangelog.com/) format.
 
-## [Unreleased](https://github.com/FredrikNoren/ungit/compare/v1.5.1...master)
+## [Unreleased](https://github.com/FredrikNoren/ungit/compare/v1.5.2...master)
 
+## [1.5.2](https://github.com/FredrikNoren/ungit/compare/v1.5.1...v1.5.2)
+
+### Fixed
+- Diff does not work for first commit [#1124](https://github.com/FredrikNoren/ungit/issues/1124)
+- `--no-launchBrowser` is ignored when ungit already running [#1259](https://github.com/FredrikNoren/ungit/issues/1259)
+- Bare repositories don't work with git 2.25 [#1265](https://github.com/FredrikNoren/ungit/issues/1265)
+- ungit crashes if current directory is deleted [#1266](https://github.com/FredrikNoren/ungit/issues/1266)
+- Make clicktests more reliable [#1263](https://github.com/FredrikNoren/ungit/pull/1263)
+- Rename + changes only show rename [#1175](https://github.com/FredrikNoren/ungit/issues/1175)
+
+### Removed
+- Remove Node 8 from build matrix [#1256](https://github.com/FredrikNoren/ungit/pull/1256)
 
 ## [1.5.1](https://github.com/FredrikNoren/ungit/compare/v1.5.0...v1.5.1)
 
@@ -583,7 +595,7 @@ We are following the [Keep a Changelog](https://keepachangelog.com/) format.
 
 ## [0.10.2](https://github.com/FredrikNoren/ungit/compare/v0.10.1...v0.10.2)
 
-# Fixed
+### Fixed
 - Handle SIGTERM and SIGINT [#763](https://github.com/FredrikNoren/ungit/issues/763)
 
 ### Added
