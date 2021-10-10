@@ -3,7 +3,18 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 We are following the [Keep a Changelog](https://keepachangelog.com/) format.
 
-## [Unreleased](https://github.com/FredrikNoren/ungit/compare/v1.5.3...master)
+## [Unreleased](https://github.com/FredrikNoren/ungit/compare/v1.5.4...master)
+
+## [1.5.4](https://github.com/FredrikNoren/ungit/compare/v1.5.3...v1.5.4)
+
+### Fixed
+- forcedLaunchPath of null fails to work [#1281](https://github.com/FredrikNoren/ungit/issues/1281)
+
+### Changed
+- Update diff2html to version 3 [#1273](https://github.com/FredrikNoren/ungit/pull/1273)
+
+### Removed
+- Remove dependency on npm [#1269](https://github.com/FredrikNoren/ungit/pull/1269)
 
 ## [1.5.3](https://github.com/FredrikNoren/ungit/compare/v1.5.2...v1.5.3)
 
