@@ -55,7 +55,8 @@ module.exports = (grunt) => {
       unit: {
         options: {
           reporter: 'spec',
-          require: './test/spec.helper.js'
+          require: './test/spec.helper.js',
+          timeout: 5000
         },
         src: 'test/*.js'
       },
