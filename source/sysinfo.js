@@ -5,7 +5,6 @@ const semver = require('semver');
 const winston = require('winston');
 const config = require('./config');
 
-
 exports.getUngitLatestVersion = () => {
   return latestVersion('mungit');
 }
@@ -15,17 +14,17 @@ exports.getUserHash = () => {
   try {
     addr = getMac();
   } catch (err) {
-    winston.error("attempt to get mac addr failed, using fake mac.", err);
-    addr = "abcde";
+    winston.error('attempt to get mac addr failed, using fake mac.', err);
+    addr = 'abcde';
   }
   return md5(addr);
-}
+};
 
 exports.getGitVersionInfo = () => {
   const result = {
     requiredVersion: '>=1.8.x',
     version: 'unkown',
-    satisfied: false
+    satisfied: false,
   };
 
   if (!config.gitVersion) {
@@ -39,4 +38,4 @@ exports.getGitVersionInfo = () => {
   }
 
   return result;
-}
+};
