@@ -96,4 +96,8 @@ class CommitViewModel {
   stopClickPropagation(data, event) {
     event.stopImmediatePropagation();
   }
+
+  copyHash() {
+    navigator.clipboard.writeText(this.sha1);
+  }
 }
