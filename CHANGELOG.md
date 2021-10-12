@@ -3,7 +3,17 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 We are following the [Keep a Changelog](https://keepachangelog.com/) format.
 
-## [Unreleased](https://github.com/FredrikNoren/ungit/compare/v1.5.4...master)
+## [Unreleased](https://github.com/FredrikNoren/ungit/compare/v1.5.5...master)
+
+## [1.5.5](https://github.com/FredrikNoren/ungit/compare/v1.5.4...v1.5.5)
+
+### Fixed
+- Bump dependencies [#1283](https://github.com/FredrikNoren/ungit/pull/1283)
+- Running npm scripts on macOS [#1287](https://github.com/FredrikNoren/ungit/pull/1287)
+- Reduce CPU and Memory consumption in textdiff. Addresses part of [#1091](https://github.com/FredrikNoren/ungit/issues/1091)
+- Better focus handling when creating branches and tags [#1288](https://github.com/FredrikNoren/ungit/pull/1288)
+- Don't show error page when reloading the page [#1289](https://github.com/FredrikNoren/ungit/issues/1289)
+- Periodically update author date of commits again [#1286](https://github.com/FredrikNoren/ungit/pull/1286)
 
 ## [1.5.4](https://github.com/FredrikNoren/ungit/compare/v1.5.3...v1.5.4)
 
