@@ -76,35 +76,6 @@ module.exports = (grunt) => {
       }
     },
 
-    // Minify images (basically just lossless compression)
-    imagemin: {
-      default: {
-        options: {
-          optimizationLevel: 3
-        },
-        files: [{
-          expand: true,
-          cwd: 'assets/client/images/',
-          src: ['**/*.png'],
-          dest: 'public/images/'
-        }]
-      }
-    },
-
-    // Embed images in css
-    imageEmbed: {
-      default: {
-        files: {
-          'public/css/styles.css': [ 'public/css/styles.css' ],
-          'components/graph/graph.css': ['components/graph/graph.css'],
-          'components/header/header.css': ['components/header/header.css'],
-          'components/staging/staging.css': ['components/staging/staging.css'],
-        },
-        options: {
-          deleteAfterEncoding: false
-        }
-      }
-    },
     jshint: {
       options: {
         undef: true, // check for usage of undefined constiables
@@ -190,7 +161,7 @@ module.exports = (grunt) => {
         options: {
           dir: '.',
           out: './build',
-          icon: './icon',
+          icon: './public/images/icon',
           all: true,
           asar: true
         }
@@ -239,7 +210,6 @@ module.exports = (grunt) => {
     b.require('async', { expose: 'async' });
     b.require('moment', { expose: 'moment' });
     b.require('blueimp-md5', { expose: 'blueimp-md5' });
-    b.require('color', { expose: 'color' });
     b.require('signals', { expose: 'signals' });
     b.require('util', { expose: 'util' });
     b.require('path', { expose: 'path' });
@@ -295,10 +265,8 @@ module.exports = (grunt) => {
     let currentVersion = packageJson[dependencyType][packageName];
     if (currentVersion[0] == '~' || currentVersion[0] == '^') currentVersion = currentVersion.slice(1);
     return pkgVersions(packageName).then((versionSet) => {
-      const versions = Array.from(versionSet).reverse();
-      const latestVersion = versions.find((version) => {
-        return semver.prerelease(version) === null;
-      });
+      const versions = Array.from(versionSet);
+      const latestVersion = semver.maxSatisfying(versions, '*');
       if (semver.gt(latestVersion, currentVersion)) {
         packageJson[dependencyType][packageName] = '~' + latestVersion;
       }
@@ -414,8 +382,6 @@ module.exports = (grunt) => {
   grunt.loadNpmTasks('grunt-lineending');
   grunt.loadNpmTasks('grunt-release');
   grunt.loadNpmTasks('grunt-mocha-test');
-  grunt.loadNpmTasks('grunt-contrib-imagemin');
-  grunt.loadNpmTasks('grunt-image-embed');
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-contrib-clean');
@@ -423,7 +389,7 @@ module.exports = (grunt) => {
   grunt.loadNpmTasks('grunt-zip-directories');
 
   // Default task, builds everything needed
-  grunt.registerTask('default', ['less:production', 'jshint', 'browserify-common', 'browserify-components', 'lineending:production', 'imageEmbed:default', 'copy:main', 'imagemin:default']);
+  grunt.registerTask('default', ['less:production', 'jshint', 'browserify-common', 'browserify-components', 'lineending:production', 'copy:main']);
 
   // Run tests without compile (use watcher or manually build)
   grunt.registerTask('unittest', ['mochaTest:unit']);

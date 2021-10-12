@@ -1,4 +1,3 @@
-
 var _ = require('lodash');
 var $ = require('jquery');
 jQuery = $; // this is for old backward compatability of bootrap modules
@@ -7,7 +6,7 @@ var dndPageScroll = require('dnd-page-scroll');
 require('../vendor/js/bootstrap/modal');
 require('../vendor/js/bootstrap/dropdown');
 require('../vendor/js/bootstrap/tooltip');
-require('jquery-ui-bundle');
+require('./jquery-ui');
 require('./knockout-bindings');
 var components = require('ungit-components');
 var Server = require('./server');
@@ -16,7 +15,7 @@ var navigation = require('ungit-navigation');
 var storage = require('ungit-storage');
 var adBlocker = require('just-detect-adblock');
 
-// Request animation frame polyfill
+// Request animation frame polyfill and init tooltips
 (function() {
   var lastTime = 0;
   var vendors = ['ms', 'moz', 'webkit', 'o'];
@@ -41,18 +40,18 @@ var adBlocker = require('just-detect-adblock');
       clearTimeout(id);
     };
 
-  programEvents.add(function(event) {
-    if (event.event === 'init-tooltip') {
-      $('.bootstrap-tooltip').tooltip().removeClass('bootstrap-tooltip');
-    }
+  $(document).tooltip({
+    selector: '.bootstrap-tooltip'
   });
-
 }());
 
 ko.bindingHandlers.autocomplete = {
   init: (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) => {
     const setAutoCompleteOptions = (sources) => {
       $(element).autocomplete({
+        classes: {
+          'ui-autocomplete': 'dropdown-menu'
+        },
         source: sources,
         minLength: 0,
         messages: {
