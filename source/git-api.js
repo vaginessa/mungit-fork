@@ -29,7 +29,7 @@ exports.registerApi = (env) => {
   if (config.dev) temp.track();
 
   if (io) {
-    io.sockets.on('connection', (socket) => {
+    io.on('connection', (socket) => {
       socket.on('disconnect', () => {
         stopDirectoryWatch(socket);
       });
@@ -142,9 +142,7 @@ exports.registerApi = (env) => {
   const emitWorkingTreeChanged = _.debounce(
     (repoPath) => {
       if (io && repoPath) {
-        io.sockets
-          .in(path.normalize(repoPath))
-          .emit('working-tree-changed', { repository: repoPath });
+        io.in(path.normalize(repoPath)).emit('working-tree-changed', { repository: repoPath });
         winston.info('emitting working-tree-changed to sockets, manually triggered');
       }
     },
@@ -154,9 +152,7 @@ exports.registerApi = (env) => {
   const emitGitDirectoryChanged = _.debounce(
     (repoPath) => {
       if (io && repoPath) {
-        io.sockets
-          .in(path.normalize(repoPath))
-          .emit('git-directory-changed', { repository: repoPath });
+        io.in(path.normalize(repoPath)).emit('git-directory-changed', { repository: repoPath });
         winston.info('emitting git-directory-changed to sockets, manually triggered');
       }
     },
