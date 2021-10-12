@@ -3,7 +3,13 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](https://semver.org/).
 We are following the [Keep a Changelog](https://keepachangelog.com/) format.
 
-## [Unreleased](https://github.com/FredrikNoren/ungit/compare/v1.5.16...master)
+## [Unreleased](https://github.com/FredrikNoren/ungit/compare/v1.5.17...master)
+
+## [1.5.17](https://github.com/FredrikNoren/ungit/compare/v1.5.16...v1.5.17)
+
+### Changed
+- node 16 [#1476](https://github.com/FredrikNoren/ungit/pull/1476)
+- Bump Dependencies [#1475](https://github.com/FredrikNoren/ungit/pull/1475)
 
 ## [1.5.16](https://github.com/FredrikNoren/ungit/compare/v1.5.15...v1.5.16)
 
@@ -15,7 +21,7 @@ We are following the [Keep a Changelog](https://keepachangelog.com/) format.
 - Bump Dependencies [#1456](https://github.com/FredrikNoren/ungit/pull/1456), [#1464](https://github.com/FredrikNoren/ungit/pull/1464)
 - Bump elliptic from 6.5.3 to 6.5.4 [#1468](https://github.com/FredrikNoren/ungit/pull/1468)
 - Bump y18n from 4.0.0 to 4.0.1 [#1471](https://github.com/FredrikNoren/ungit/pull/1471)
-- git 2.3x changes break unittests [#1472](https://github.com/FredrikNoren/ungit/issue/1472)
+- git 2.3x changes break unittests [#1472](https://github.com/FredrikNoren/ungit/issues/1472)
 
 ## [1.5.15](https://github.com/FredrikNoren/ungit/compare/v1.5.14...v1.5.15)
 
