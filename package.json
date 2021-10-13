@@ -6,7 +6,7 @@
     "Sten Feldman <exile@chamber.ee> (http://sten.feldman.eesti.ee/)"
   ],
   "description": "Git made easy, a fork of ungit",
-  "version": "1.2.5",
+  "version": "1.3.0",
   "ungitPluginApiVersion": "0.2.0",
   "scripts": {
     "start": "node ./bin/ungit",
@@ -22,7 +22,8 @@
     "bumpdependencies": "ncu --upgrade --reject bootstrap",
     "electronpackage": "node ./scripts/electronpackage.js",
     "electronzip": "node ./scripts/electronzip.js",
-    "travisnpmpublish": "node ./scripts/travisnpmpublish.js"
+    "travisnpmpublish": "node ./scripts/travisnpmpublish.js",
+    "clean": "rm -rf public/css public/js public/fonts/glyphicons-*; find ./components -name '*.bundle.js' | xargs rm; find ./components -name '*.map' | xargs rm"
   },
   "repository": {
     "type": "git",

@@ -36,7 +36,7 @@ class LoginViewModel {
 
   login() {
     if(this.token === undefined || (this.username() && this.password())) {
-      this.server.postPromise('/login', { username: this.username(), password: this.password() }).then(res => {
+      this.server.postPromise('/login', { username: this.username(), password: this.password() })
       .then((res) => {
         this.loggedIn.dispatch();
         this.status('loggedIn');

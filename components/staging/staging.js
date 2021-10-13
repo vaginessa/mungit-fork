@@ -387,6 +387,10 @@ class StagingViewModel {
   }
 
   onAltEnter(d, e) {
+    var element = document.getElementById('form-commitMessageBody');
+    element.style.height = 'auto';
+    element.style.height = 20 + element.scrollHeight + 'px';
+
     if (e.keyCode === 13 && e.altKey && !this.commitValidationError()) {
       this.commit();
     }
@@ -478,9 +482,6 @@ class FileViewModel {
       this.diff(this.getSpecificDiff());
     }
     if (this.diff().isNew) this.diff().isNew(state.isNew);
-};
-StagingViewModel.prototype.onAltEnter = function(d, e){
-  var element = document.getElementById('form-commitMessageBody');
     if (this.diff().isRemoved) this.diff().isRemoved(state.removed);
   }
 
@@ -492,8 +493,6 @@ StagingViewModel.prototype.onAltEnter = function(d, e){
     }
     this.patchLineList([]);
   }
-  return true;
-};
 
   discardChanges() {
     if (

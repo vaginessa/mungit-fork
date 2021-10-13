@@ -178,14 +178,13 @@ exports.start = function () {
       app.onProgramEvent(event);
     }
   });
-  
+  if (ungit.config.authentication) {
     var authenticationScreen = components.create('login', { server: server });
     appContainer.content(authenticationScreen);
     authenticationScreen.loggedIn.add(function () {
       server.initSocket();
     });
   } else {
-  if (!ungit.config.authentication) {
     server.initSocket();
   }
 
