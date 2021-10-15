@@ -1,8 +1,9 @@
-
 const ko = require('knockout');
+const octicons = require('octicons');
 const components = require('ungit-components');
+const { encodePath } = require('ungit-address-parser');
 
-components.register('home', args => new HomeViewModel(args.app));
+components.register('home', (args) => new HomeViewModel(args.app));
 
 class HomeRepositoryViewModel {
   constructor(home, path) {
@@ -11,19 +12,29 @@ class HomeRepositoryViewModel {
     this.server = this.app.server;
     this.path = path;
     this.title = path;
-    this.link = `${ungit.config.rootPath}/#/repository?path=${encodeURIComponent(path)}`;
+    this.link = `${ungit.config.rootPath}/#/repository?path=${encodePath(path)}`;
     this.pathRemoved = ko.observable(false);
     this.remote = ko.observable('...');
     this.updateState();
+    this.removeIcon = octicons.x.toSVG({ height: 18 });
+    this.arrowIcon = octicons['arrow-right'].toSVG({ height: 24 });
   }
 
   updateState() {
-    this.server.getPromise(`/fs/exists?path=${encodeURIComponent(this.path)}`)
-      .then(exists => { this.pathRemoved(!exists); })
+    this.server
+      .getPromise(`/fs/exists?path=${encodePath(this.path)}`)
+      .then((exists) => {
+        this.pathRemoved(!exists);
+      })
       .catch((e) => this.server.unhandledRejection(e));
-    this.server.getPromise(`/remotes/origin?path=${encodeURIComponent(this.path)}`)
-      .then(remote => {	this.remote(remote.address.replace(/\/\/.*?\@/, "//***@")); })
-      .catch(err => { this.remote(''); });
+    this.server
+      .getPromise(`/remotes/origin?path=${encodePath(this.path)}`)
+      .then((remote) => {
+        this.remote(remote.address.replace(/\/\/.*?@/, '//***@'));
+      })
+      .catch((err) => {
+        this.remote('');
+      });
   }
 
   remove() {
@@ -37,6 +48,7 @@ class HomeViewModel {
     this.app = app;
     this.repos = ko.observableArray();
     this.showNux = ko.computed(() => this.repos().length == 0);
+    this.addIcon = octicons.plus.toSVG({ height: 18 });
   }
 
   updateNode(parentElement) {
@@ -49,12 +61,20 @@ class HomeViewModel {
 
   update() {
     const reposByPath = {};
-    this.repos().forEach(repo => { reposByPath[repo.path] = repo; });
-    this.repos(this.app.repoList().sort().map(path => {
-      if (!reposByPath[path])
-        reposByPath[path] = new HomeRepositoryViewModel(this, path);
-      return reposByPath[path];
-    }));
+    this.repos().forEach((repo) => {
+      reposByPath[repo.path] = repo;
+    });
+    this.repos(
+      this.app
+        .repoList()
+        .sort()
+        .map((path) => {
+          if (!reposByPath[path]) reposByPath[path] = new HomeRepositoryViewModel(this, path);
+          return reposByPath[path];
+        })
+    );
   }
-  get template() { return 'home'; }
+  get template() {
+    return 'home';
+  }
 }
