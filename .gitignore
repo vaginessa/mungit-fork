@@ -1,10 +1,6 @@
 node_modules/
 public/css/
 public/js/
-
-components/**/*.css
-components/**/*.bundle.js
-public/css/
-public/images/
-public/js/
-src/
+public/fonts/glyphicons-*
+components/**/*.css*
+components/**/*.bundle.js*

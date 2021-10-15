@@ -23,7 +23,7 @@
     "electronpackage": "node ./scripts/electronpackage.js",
     "electronzip": "node ./scripts/electronzip.js",
     "travisnpmpublish": "node ./scripts/travisnpmpublish.js",
-    "clean": "rm -rf public/css public/js public/fonts/glyphicons-*; find ./components -name '*.bundle.js' | xargs rm; find ./components -name '*.map' | xargs rm"
+    "clean": "rm -rf public/css public/js public/fonts/glyphicons-*; find ./components -name '*.bundle.js' | xargs rm; find ./components -name '*.map' | xargs rm; find ./components -name '*.css' | xargs rm"
   },
   "repository": {
     "type": "git",
