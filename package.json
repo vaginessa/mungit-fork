@@ -44,7 +44,7 @@
     "dnd-page-scroll": "0.0.4",
     "express": "~4.17.1",
     "express-session": "~1.17.2",
-    "getmac": "~5.17.0",
+    "getmac": "~5.20.0",
     "hasher": "~1.2.0",
     "ignore": "~5.1.8",
     "jquery": "~3.6.0",
