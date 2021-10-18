@@ -1,12 +1,14 @@
-
 const ko = require('knockout');
+const octicons = require('octicons');
 const components = require('ungit-components');
+const { encodePath } = require('ungit-address-parser');
 
-components.register('imagediff', args => new ImageDiffViewModel(args));
+components.register('imagediff', (args) => new ImageDiffViewModel(args));
 
 class ImageDiffViewModel {
   constructor(args) {
     this.filename = args.filename;
+    this.oldFilename = args.oldFilename;
     this.repoPath = args.repoPath;
     this.isNew = ko.observable(false);
     this.isRemoved = ko.observable(false);
@@ -16,10 +18,16 @@ class ImageDiffViewModel {
       if (this.isRemoved()) return 'removed';
       return 'changed';
     });
-    const gitDiffURL = `${ungit.config.rootPath}/api/diff/image?path=${encodeURIComponent(this.repoPath())}&filename=${this.filename}&version=`;
-    this.oldImageSrc = gitDiffURL + (this.sha1 ? this.sha1 + '^': 'HEAD');
-    this.newImageSrc = gitDiffURL + (this.sha1 ? this.sha1: 'current');
+    const gitDiffURL = `${ungit.config.rootPath}/api/diff/image?path=${encodePath(
+      this.repoPath()
+    )}`;
+    this.oldImageSrc =
+      gitDiffURL + `&filename=${this.oldFilename}&version=${this.sha1 ? this.sha1 + '^' : 'HEAD'}`;
+    this.newImageSrc =
+      gitDiffURL + `&filename=${this.filename}&version=${this.sha1 ? this.sha1 : 'current'}`;
     this.isShowingDiffs = args.isShowingDiffs;
+    this.rightArrowIcon = octicons['arrow-right'].toSVG({ height: 100 });
+    this.downArrowIcon = octicons['arrow-down'].toSVG({ height: 100 });
   }
 
   updateNode(parentElement) {

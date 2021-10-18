@@ -1,16 +1,16 @@
-
 const ko = require('knockout');
+const octicons = require('octicons');
 const components = require('ungit-components');
-const programEvents = require('ungit-program-events');
-const navigation = require('ungit-navigation');
 
-components.register('gitErrors', args => new GitErrorsViewModel(args.server, args.repoPath));
+components.register('gitErrors', (args) => new GitErrorsViewModel(args.server, args.repoPath));
 
 class GitErrorsViewModel {
   constructor(server, repoPath) {
     this.server = server;
     this.repoPath = repoPath;
     this.gitErrors = ko.observableArray();
+    this.closeIcon = octicons.x.toSVG({ height: 18 });
+    this.alertIcon = octicons.alert.toSVG({ height: 24 });
   }
 
   updateNode(parentElement) {
@@ -42,21 +42,13 @@ class GitErrorViewModel {
     this.bugReportWasSent = ungit.config.bugtracking;
 
     if (!data.shouldSkipReport && !ungit.config.bugtracking) {
-      this.server.getPromise('/userconfig')
-        .then(userConfig => { self.showEnableBugtracking(!userConfig.bugtracking); });
+      this.server.getPromise('/userconfig').then((userConfig) => {
+        self.showEnableBugtracking(!userConfig.bugtracking);
+      });
     }
   }
 
   dismiss() {
     this.gitErrors.gitErrors.remove(this);
-  }
-
-  enableBugtrackingAndStatistics() {
-    this.server.getPromise('/userconfig')
-      .then(userConfig => {
-        userConfig.bugtracking = true;
-        userConfig.sendUsageStatistics = true;
-        return this.server.postPromise('/userconfig', userConfig)
-      }).then(() => { this.showEnableBugtracking(false); })
   }
 }
