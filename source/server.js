@@ -116,7 +116,7 @@ if (config.autoShutdownTimeout) {
       logger.info(
         `Shutting down ungit due to inactivity. (autoShutdownTimeout is set to ${config.autoShutdownTimeout} ms`
       );
-      process.exit(0);
+      process.exit();
     }, config.autoShutdownTimeout);
   };
   app.use((req, res, next) => {
@@ -383,7 +383,7 @@ const readUserConfig = () => {
         })
         .catch((err) => {
           logger.error(`Stop at reading ~/.ungitrc because ${err}`);
-          process.exit(0);
+          process.exit(1);
         });
     })
     .catch(() => {
