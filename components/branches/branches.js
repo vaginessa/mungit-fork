@@ -1,4 +1,5 @@
 const ko = require('knockout');
+const _ = require('lodash');
 const octicons = require('octicons');
 const components = require('ungit-components');
 const storage = require('ungit-storage');
@@ -7,7 +8,6 @@ var octicon = require('octicons');
 const showBranch = 'showBranch';
 const showTag = 'showTag';
 const { ComponentRoot } = require('../ComponentRoot');
-const _ = require('lodash');
 
 components.register('branches', (args) => {
   return new BranchesViewModel(args.server, args.graph, args.repoPath);
