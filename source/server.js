@@ -473,7 +473,7 @@ app.use((err, req, res, next) => {
 
 exports.started = new signals.Signal();
 
-server.listen(config.port, config.ungitBindIp, () => {
+server.listen({ port: config.port, host: config.ungitBindIp }, () => {
   winston.info('Listening on port ' + config.port);
   console.log('## Mungit started ##'); // Consumed by bin/mungit to figure out when the app is started
   exports.started.dispatch();
