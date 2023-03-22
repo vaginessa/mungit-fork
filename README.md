@@ -1,6 +1,6 @@
 [![NPM Version](https://img.shields.io/npm/v/mungit.svg)](https://www.npmjs.com/package/mungit)
 [![NPM Downloads](https://img.shields.io/npm/dw/mungit.svg)](https://www.npmjs.com/package/mungit)
-[![Build Status](https://travis-ci.org/exsilium/mungit.svg?branch=master)](https://travis-ci.org/exsilium/mungit)
+![Build Status](https://github.com/exsilium/mungit/actions/workflows/nodejs.yml/badge.svg)
 [![Master Dependency Status](https://snyk.io/test/github/exsilium/mungit/badge.svg)](https://snyk.io/test/github/exsilium/mungit)
 [![Development Dependency Status](https://snyk.io/test/github/exsilium/mungit/development/badge.svg)](https://snyk.io/test/github/exsilium/mungit)
 [![Bitcoin donate button](https://img.shields.io/badge/bitcoin-donate-yellow.svg)](https://www.coinbase.com/checkouts/9c54082e04ff349ac8bd3679d6d0da48 "One-time donation to keep this fork alive")
