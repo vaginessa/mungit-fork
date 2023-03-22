@@ -1,12 +1,14 @@
 const getMac = require('getmac').default;
-const latestVersion = require('latest-version');
 const md5 = require('blueimp-md5');
 const semver = require('semver');
 const logger = require('./utils/logger');
 const config = require('./config');
 
 exports.getUngitLatestVersion = () => {
-  return latestVersion('mungit');
+  // eslint-disable-next-line node/no-unsupported-features/es-syntax
+  return import('latest-version').then((latestVersion) => {
+    return latestVersion.default('mungit');
+});
 }
 
 exports.getUserHash = () => {

@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 Use the following format for additions: ` - VERSION: [feature/patch (if applicable)] Short description of change. Links to relevant issues/PRs.`
 
+- 1.4.0:
+  - Merging changes made in upstream v1.5.19..1.5.23, see the upstream CHANGELOG for details
 - 1.3.0:
   - Merging changes made in upstream v1.4.40..1.5.18, see the upstream CHANGELOG for details
 - 1.2.4:

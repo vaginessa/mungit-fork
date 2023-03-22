@@ -250,13 +250,13 @@ const socketIO = require('socket.io');
 const socketsById = {};
 let socketIdCounter = 0;
 const io = socketIO(server, {
-  path: config.rootPath + '/socket.io',
-  logger: {
-    debug: winston.debug.bind(winston),
-    info: winston.info.bind(winston),
-    error: winston.error.bind(winston),
-    warn: winston.warn.bind(winston),
-  },
+path: config.rootPath + '/socket.io',
+logger: {
+  debug: logger.debug.bind(logger),
+  info: logger.info.bind(logger),
+  error: logger.error.bind(logger),
+  warn: logger.warn.bind(logger),
+},
 });
 io.on('connection', (socket) => {
   const socketId = socketIdCounter++;
@@ -454,6 +454,6 @@ exports.started = new signals.Signal();
 
 server.listen({ port: config.port, host: config.ungitBindIp }, () => {
   logger.info('Listening on port ' + config.port);
-  console.log('## Mungit started ##'); // Consumed by bin/ungit to figure out when the app is started
+  console.log('## Mungit started ##'); // Consumed by bin/mungit to figure out when the app is started
   exports.started.dispatch();
 });

@@ -71,7 +71,7 @@ const launch = () => {
   );
 
   child.on('exit', (res) => {
-    console.log('Stopped keeping ungit alive');
+    console.log('Stopped keeping mungit alive');
   });
 
   const startupListener = (data) => {

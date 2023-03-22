@@ -6,10 +6,10 @@
     "Sten Feldman <exile@chamber.ee> (http://sten.feldman.eesti.ee/)"
   ],
   "description": "Git made easy, a fork of ungit",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "ungitPluginApiVersion": "0.2.0",
   "scripts": {
-    "start": "node ./bin/ungit",
+    "start": "node ./bin/mungit",
     "inspect": "node --inspect ./source/server.js",
     "test": "npm run unittest && npm run clicktest",
     "unittest": "mocha --config .mochatest.json",
@@ -62,7 +62,7 @@
     "p-limit": "~4.0.0",
     "passport": "~0.6.0",
     "passport-local": "~1.0.0",
-    "jsonwebtoken": "~8.5.1",
+    "jsonwebtoken": "~9.0.0",
     "raven-js": "~3.27.2",
     "rc": "~1.2.8",
     "rimraf": "~4.1.1",
