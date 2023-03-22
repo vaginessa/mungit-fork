@@ -63,7 +63,38 @@ describe('git-api', () => {
   it('quickstatus should say uninited in uninited directory', () => {
     return common
       .get(req, '/quickstatus', { path: testDir })
-      .then((res) => expect(res).to.eql({ type: 'uninited', gitRootPath: testDir }));
+      .then((res) => expect(res).to.eql({ type: 'uninited', subRepos: [], gitRootPath: testDir }));
+  });
+
+  it('quickstatus should say uninited with sub repos if it has sub repos', () => {
+    let testDirWithSubRepos;
+    let subRepo1, subRepo2;
+
+    return common
+      .post(req, '/testing/createtempdir')
+      .then((res) => {
+        expect(res.path).to.be.ok();
+        return fs.realpath(res.path).then((dir) => {
+          testDirWithSubRepos = dir;
+        });
+      })
+      .then(() => {
+        subRepo1 = path.join(testDirWithSubRepos, 'repo1');
+        return fs.mkdir(subRepo1).then(() => common.post(req, '/init', { path: subRepo1 }));
+      })
+      .then(() => {
+        subRepo2 = path.join(testDirWithSubRepos, 'repo2');
+        return fs.mkdir(subRepo2).then(() => common.post(req, '/init', { path: subRepo2 }));
+      })
+      .then(() => {
+        return common.get(req, '/quickstatus', { path: testDirWithSubRepos }).then((res) =>
+          expect(res).to.eql({
+            type: 'uninited',
+            subRepos: [subRepo1, subRepo2],
+            gitRootPath: testDirWithSubRepos,
+          })
+        );
+      });
   });
 
   it('status should fail in non-existing directory', () => {
@@ -220,7 +251,7 @@ describe('git-api', () => {
     return common.post(req, '/discardchanges', { path: testDir, file: testFile });
   });
 
-  it('modifying a test file should work', () => {
+  it('modifying a test file should work part deux', () => {
     return common.post(req, '/testing/changefile', { file: path.join(testDir, testFile) });
   });
 
@@ -292,7 +323,7 @@ describe('git-api', () => {
     return common.post(req, '/testing/createfile', { file: path.join(testDir, testFile3) });
   });
 
-  it('status should list the new file', () => {
+  it('status should list the new file once again', () => {
     return common.get(req, '/status', { path: testDir }).then((res) => {
       expect(Object.keys(res.files).length).to.be(1);
       expect(res.files[testFile3]).to.eql({

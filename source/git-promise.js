@@ -2,7 +2,7 @@ const child_process = require('child_process');
 const gitParser = require('./git-parser');
 const path = require('path');
 const config = require('./config');
-const winston = require('winston');
+const logger = require('./utils/logger');
 const addressParser = require('./address-parser');
 const _ = require('lodash');
 const isWindows = /^win/.test(process.platform);
@@ -19,7 +19,6 @@ const gitConfigArguments = [
   '-c',
   'core.editor=:',
 ];
-const gitSem = require('locks').createSemaphore(config.maxConcurrentGitOperations);
 const gitOptionalLocks = config.isGitOptionalLocks ? '--no-optional-locks' : '';
 const gitBin = (() => {
   if (config.gitBinPath) {
@@ -27,14 +26,6 @@ const gitBin = (() => {
   }
   return 'git';
 })();
-
-// only allows ${config.maxConcurrentGitOperations} count of parallel git operations
-const rateLimiter = () =>
-  new Promise((resolve) => {
-    gitSem.wait(() => {
-      resolve();
-    });
-  });
 
 const isRetryableError = (err) => {
   const errMsg = (err || {}).error || '';
@@ -46,75 +37,77 @@ const isRetryableError = (err) => {
   return false;
 };
 
+let pLimit = (fn) => {
+  try {
+    return Promise.resolve(fn());
+  } catch (err) {
+    return Promise.reject(err);
+  }
+};
+// eslint-disable-next-line node/no-unsupported-features/es-syntax
+import('p-limit').then((limit) => {
+  pLimit = limit.default(config.maxConcurrentGitOperations);
+});
+
 const gitExecutorProm = (args, retryCount) => {
-  return rateLimiter()
-    .then(() => {
-      return new Promise((resolve, reject) => {
+  let timeoutTimer;
+  return pLimit(() => {
+    return new Promise((resolve, reject) => {
+      if (config.logGitCommands)
+        logger.info(`git executing: ${args.repoPath} ${args.commands.join(' ')}`);
+      let rejectedError = null;
+      let stdout = '';
+      let stderr = '';
+      const env = JSON.parse(JSON.stringify(process.env));
+      env['LC_ALL'] = 'C';
+      const procOpts = {
+        cwd: args.repoPath,
+        maxBuffer: 1024 * 1024 * 100,
+        detached: false,
+        env: env,
+      };
+      const gitProcess = child_process.spawn(gitBin, args.commands, procOpts);
+      timeoutTimer = setTimeout(() => {
+        if (!timeoutTimer) return;
+        timeoutTimer = null;
+
+        logger.warn(`command timedout: ${args.commands.join(' ')}\n`);
+        gitProcess.kill('SIGINT');
+      }, args.timeout);
+
+      if (args.outPipe) {
+        gitProcess.stdout.pipe(args.outPipe);
+      } else {
+        gitProcess.stdout.on('data', (data) => (stdout += data.toString()));
+      }
+      if (args.inPipe) {
+        gitProcess.stdin.end(args.inPipe);
+      }
+      gitProcess.stderr.on('data', (data) => (stderr += data.toString()));
+      gitProcess.on('error', (error) => (rejectedError = error));
+
+      gitProcess.on('close', (code) => {
         if (config.logGitCommands)
-          winston.info(`git executing: ${args.repoPath} ${args.commands.join(' ')}`);
-        let rejectedError = null;
-        let stdout = '';
-        let stderr = '';
-        const env = JSON.parse(JSON.stringify(process.env));
-        env['LC_ALL'] = 'C';
-        const procOpts = {
-          cwd: args.repoPath,
-          maxBuffer: 1024 * 1024 * 100,
-          detached: false,
-          env: env,
-        };
-        const gitProcess = child_process.spawn(gitBin, args.commands, procOpts);
-        let timeoutTimer = setTimeout(() => {
-          if (!timeoutTimer) return;
-          timeoutTimer = null;
-
-          winston.warn(`command timedout: ${args.commands.join(' ')}\n`);
-          gitSem.signal();
-          gitProcess.kill('SIGINT');
-        }, args.timeout);
-
-        if (args.outPipe) {
-          gitProcess.stdout.pipe(args.outPipe);
+          logger.info(
+            `git result (first 400 bytes): ${args.commands.join(' ')}\n${stderr.slice(
+              0,
+              400
+            )}\n${stdout.slice(0, 400)}`
+          );
+        if (rejectedError) {
+          reject(rejectedError);
+        } else if (code === 0 || (code === 1 && args.allowError)) {
+          resolve(stdout);
         } else {
-          gitProcess.stdout.on('data', (data) => (stdout += data.toString()));
+          reject(getGitError(args, stderr, stdout));
         }
-        if (args.inPipe) {
-          gitProcess.stdin.end(args.inPipe);
-        }
-        gitProcess.stderr.on('data', (data) => (stderr += data.toString()));
-        gitProcess.on('error', (error) => {
-          rejectedError = error;
-        });
-
-        gitProcess.on('close', (code) => {
-          if (!timeoutTimer) return;
-          clearTimeout(timeoutTimer);
-          timeoutTimer = null;
-
-          if (config.logGitCommands)
-            winston.info(
-              `git result (first 400 bytes): ${args.commands.join(' ')}\n${stderr.slice(
-                0,
-                400
-              )}\n${stdout.slice(0, 400)}`
-            );
-          if (args.outPipe) args.outPipe.end();
-          gitSem.signal();
-
-          if (rejectedError) {
-            reject(rejectedError);
-          } else if (code === 0 || (code === 1 && args.allowError)) {
-            resolve(stdout);
-          } else {
-            reject(getGitError(args, stderr, stdout));
-          }
-        });
       });
-    })
+    });
+  })
     .catch((err) => {
       if (retryCount > 0 && isRetryableError(err)) {
         return new Promise((resolve) => {
-          winston.warn(
+          logger.warn(
             'retrying git commands after lock acquired fail. (If persists, lower "maxConcurrentGitOperations")'
           );
           // sleep random amount between 250 ~ 750 ms
@@ -123,21 +116,35 @@ const gitExecutorProm = (args, retryCount) => {
       } else {
         throw err;
       }
+    })
+    .finally(() => {
+      if (args.outPipe) args.outPipe.end();
+      if (timeoutTimer) clearTimeout(timeoutTimer);
     });
 };
 
 /**
- * Returns a promise that executes git command with given arguments
+ * Returns a promise that executes git command with given arguments.
+ *
  * @function
- * @param {obj|array} commands - An object that represents all parameters or first parameter only, which is an array of commands
- * @param {string} repoPath - path to the git repository
- * @param {boolean=} allowError - true if return code of 1 is acceptable as some cases errors are acceptable
- * @param {stream=} outPipe - if this argument exists, stdout is piped to this object
- * @param {stream=} inPipe - if this argument exists, data is piped to stdin process on start
- * @param {timeout=} timeout - execution timeout, default is 2 mins
- * @returns {promise} execution promise
- * @example getGitExecuteTask({ commands: ['show'], repoPath: '/tmp' });
- * @example getGitExecuteTask(['show'], '/tmp');
+ * @param {Object | string[]} commands    - An object that represents all parameters or first
+ *                                        parameter only, which is an array of commands.
+ * @param {string}            repoPath    - path to the git repository.
+ * @param {boolean=}          allowError  - true if return code of 1 is acceptable as some cases
+ *                                        errors are acceptable.
+ * @param {WritableStream=}   outPipe     - if this argument exists, stdout is piped to this object.
+ * @param {ReadableStream=}   inPipe      - if this argument exists, data is piped to stdin process
+ *                                        on start.
+ * @param {number=}           timeout     - execution timeout, default is 2 mins.
+ * @returns {promise} Execution promise.
+ * @example
+ *
+ *   getGitExecuteTask({ commands: ['show'], repoPath: '/tmp' });
+ *
+ * @example
+ *
+ *   getGitExecuteTask(['show'], '/tmp');
+ *
  */
 const git = (commands, repoPath, allowError, outPipe, inPipe, timeout) => {
   let args = {};
@@ -147,6 +154,7 @@ const git = (commands, repoPath, allowError, outPipe, inPipe, timeout) => {
     args.outPipe = outPipe;
     args.inPipe = inPipe;
     args.allowError = allowError;
+    args.timeout = timeout;
   } else {
     args = commands;
   }
@@ -176,6 +184,10 @@ const getGitError = (args, stderr, stdout) => {
   err.stderrLower = (stderr || '').toLowerCase();
   if (err.stderrLower.indexOf('not a git repository') >= 0) {
     err.errorCode = 'not-a-repository';
+  } else if (err.stderrLower.indexOf("bad default revision 'head'") != -1) {
+    err.errorCode = 'no-head';
+  } else if (err.stderrLower.indexOf('does not have any commits yet') != -1) {
+    err.errorCode = 'no-commits';
   } else if (err.stderrLower.indexOf('connection timed out') != -1) {
     err.errorCode = 'remote-timeout';
   } else if (err.stderrLower.indexOf('permission denied (publickey)') != -1) {
@@ -588,7 +600,9 @@ git.revParse = (repoPath) => {
         return { type: 'uninited', gitRootPath: rootPath };
       });
     })
-    .catch((err) => ({ type: 'uninited', gitRootPath: path.normalize(repoPath) }));
+    .catch((err) => {
+      return { type: 'uninited', gitRootPath: path.normalize(repoPath) };
+    });
 };
 
 git.log = (path, limit, skip, maxActiveBranchSearchIteration) => {

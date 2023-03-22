@@ -1,4 +1,5 @@
-<!-- ko component: header --><!-- /ko -->
+<!-- ko component: header -->
+<!-- /ko -->
 
 <div class="app">
   <div class="container" data-bind="shown: shown">
@@ -19,7 +20,7 @@
       <button type="button" class="close" data-bind="click: dismissBugtrackingNagscreen">
         &times;
       </button>
-      <p><strong>Help make ungit better with the press of a button!</strong></p>
+      <p><strong>Help make mungit better with the press of a button!</strong></p>
 
       <button class="btn btn-primary" data-bind="click: enableBugtracking">
         Enable automatic bug reports
@@ -35,6 +36,7 @@
   <!-- /ko -->
 </div>
 
-<!-- ko if: dialog -->
-<!-- ko template: { name: templateChooser, data: dialog } --><!-- /ko -->
+<!-- ko if: modal -->
+<!-- ko template: { name: templateChooser, data: modal } -->
+<!-- /ko -->
 <!-- /ko -->
