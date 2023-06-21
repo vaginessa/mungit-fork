@@ -6,6 +6,7 @@
 [![Bitcoin donate button](https://img.shields.io/badge/bitcoin-donate-yellow.svg)](https://www.coinbase.com/checkouts/9c54082e04ff349ac8bd3679d6d0da48 "One-time donation to keep this fork alive")
 
 mungit
+
 ======
 Mungit is an MIT licensed [ungit](https://github.com/FredrikNoren/ungit) fork that was triggered by upstream [license change](https://github.com/FredrikNoren/ungit/issues/974). As of 22nd of December 2017, however, the original author decided to [revert ungit back](https://github.com/FredrikNoren/ungit/issues/997) to MIT license 🙌 🎉
 
